@@ -13,7 +13,7 @@ CFLAGS=-mstm8 -lstm8 -L$(LIB_PATH) -I../inc
 INC=../inc/
 INCLUDES=$(BOARD_INC) $(INC)ascii.inc $(INC)gen_macros.inc 
 BUILD=build/
-SRC=stm8_wm.asm
+SRC=stm8_wozmon.asm
 OBJECT=$(BUILD)$(BOARD)/$(NAME).rel
 OBJECTS=$(BUILD)$(BOARD)/$(SRC:.asm=.rel)
 LIST=$(BUILD)$(BOARD)/$(NAME).lst

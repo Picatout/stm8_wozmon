@@ -79,6 +79,11 @@
     .byte 0xb7,v 
     .endm 
 
+    ; tnz zero page variable 
+    .macro _tnz v 
+    .byte 0x3d,v 
+    .endm 
+
     ; load x from variable in zero page 
     .macro _ldxz v 
     .byte 0xbe,v 

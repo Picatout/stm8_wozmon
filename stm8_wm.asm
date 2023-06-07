@@ -46,7 +46,6 @@ stack_full: ; after RAM end
 ; inc/gen_macros.inc 
 ; to supplement the assembler 
 ;--------------------------------------	
-cnt: .blkb 1 ; count of character in IN buffer 
 mode: .blkb 1 ; command mode 
 start: .blkw 1 ; range start address 
 last: .blkw 1   ; range last address 
@@ -95,6 +94,12 @@ reset:
 READ=0
 READ_BLOCK=255
 
+    ; get next character from input buffer 
+    .macro _next_char 
+    ld a,(y)
+    incw y 
+    .endm ; 4 bytes, 2 cy 
+
 cli: 
     ld a,#CR 
     call putchar 
@@ -102,53 +107,38 @@ cli:
     call putchar ; prompt character 
     _clrz mode 
     call getline
-    tnz cnt 
-    jreq cli 
+; analyze input line      
     ldw y,#IN  
-    clrw x
-    _strxz last  
 parse_input:     
-; parse input line      
-    call next_char 
-    jreq execute_cmd 
+    _next_char
+    tnz a     
+    jrne parse01
+; at end of line 
+    jra exam_block 
+parse01:
     cp a,#'R 
     jrne 4$ 
-    jp run 
+    jp (x) ; run machine code
+    jra cli
 4$: cp a,#':
     jrne 5$ 
-    jp modify 
+    jra modify 
 5$:
     cp a,#'. 
     jrne 6$ 
     cpl mode
-    _ldxz last 
-    _strxz start 
     jra parse_input 
 6$: 
     cp a,#SPACE 
     jreq parse_input ; skip blank 
-    decw y 
-    inc cnt 
     call parse_hex
     tnz a ; unknown token ignore rest of line  
-    jreq execute_cmd
+    jreq exam_block 
     _strxz last 
-    jra parse_input 
-execute_cmd:
-    _ldaz mode 
-    jrne exam_block
-    _ldxz last 
+    tnz mode 
+    jrne parse_input
     _strxz start 
-    callr exam 
-    jra cli 
-
-;---------------------------------
-;  run machine code routine 
-;---------------------------------
-run:
-    ldw x,last  
-    call (x)
-    jp cli 
+    jra parse_input 
 
 ;-------------------------------------
 ; modify RAM or peripheral register 
@@ -158,8 +148,11 @@ modify:
     _ldxz last 
     _strxz start 
     callr exam 
-1$:
-    callr skip_blank
+1$: 
+; skip spaces 
+    _next_char 
+    cp a,#SPACE 
+    jreq 1$ 
     call parse_hex
     tnz a 
     jreq 9$ 
@@ -170,15 +163,6 @@ modify:
     _strxz start
     jra 1$ 
 9$: jp cli 
-
-skip_blank:
-    tnz cnt 
-    jreq 9$ 
-    incw y
-    ld a,(y)
-    cp a,#SPACE 
-    jreq skip_blank 
-9$: ret 
 
 ;------------------------------------------
 ;  display byte value at 'start' address 
@@ -197,7 +181,8 @@ exam:
 exam_block:
     _vars VSIZE 
     _ldxz last 
-    subw x,start 
+    subw x,start
+;    jrmi bad_range  
     incw x 
     ldw (COUNT,sp),x ; bytes to display count 
 new_row: 
@@ -224,27 +209,9 @@ row:
     call print_byte 
     jra row 
 9$:
+bad_range:
     _drop VSIZE 
     jp cli  
-
-;---------------------------
-; read next character from 
-; TIB
-; input:
-;   none:
-; output:
-;    A 
-; side effect: 
-;    Y  incremented 
-;    cnt decremented 
-;----------------------------- 
-next_char:
-    ld a,cnt 
-    jreq 9$ 
-    ld a,(y)
-    dec cnt 
-    incw y 
-9$: ret 
 
 ;----------------------------
 ; parse hexadecimal number 
@@ -261,8 +228,6 @@ parse_hex:
     clrw x
     _strxz acc16 
 1$:    
-    callr next_char 
-    jreq 8$
     xor a,#0x30
     cp a,#10 
     jrmi 2$   ; 0..9 
@@ -277,14 +242,12 @@ parse_hex:
     _straz acc8 
     addw x,acc16 ; x+=digit 
     inc (1,sp) ; increment digit count 
-    jra 1$
-8$: ; end of line 
-    pop a   
-    ret 
+    _next_char 
+    tnz a 
+    jrne 1$
 9$: ; end of hex number
     pop a
     decw y  ; put back last character  
-    inc cnt 
     ret 
 
 ;-----------------------------------
@@ -399,12 +362,11 @@ putchar:
 ;   none 
 ;  output:
 ;    IN      input line ASCIZ no CR  
-;    cnt     line length 
 ;-------------------------------------
 getline:
     ldw y,#IN 
-    clr cnt 
 1$:
+    clr (y) 
     callr getchar 
     cp a,#CR 
     jreq 9$ 
@@ -417,31 +379,52 @@ getline:
     callr putchar
     ld (y),a 
     incw y 
-    inc cnt 
     jra 1$
 9$: callr putchar 
-;    clr (y)
     ret 
 
 ;-----------------------------------
 ; delete character left of cursor 
-; decrement cnt and Y 
+; decrement Y 
 ; input:
 ;   none 
 ; output:
 ;   none 
 ;-----------------------------------
 delback:
-    tnz cnt  
-    jreq 9$
-    decw y 
-    dec cnt 
-    call putchar 
-    ld a,#SPACE 
-    call putchar 
+    cpw y,#IN 
+    jreq 9$     
+    callr putchar ; backspace 
+    ld a,#SPACE    
+    callr putchar ; overwrite with space 
     ld a,#BS 
-    call putchar 
+    callr putchar ;  backspace
+    decw y
 9$:
     ret 
 
+;----------------------------
+; code to test 'R' command 
+; blink LED on NUCLEO board 
+;----------------------------
+.if 1
+r_test:
+    bset PC_DDR,#5
+    bset PC_CR1,#5
+1$: bcpl PC_ODR,#5 
+; delay 
+    ld a,#4
+    clrw x
+2$:
+    decw x 
+    jrne 2$
+    dec a 
+    jrne 2$ 
+; if key exit 
+    btjf UART_SR,#UART_SR_RXNE,1$
+    ld a,UART_DR 
+; if code terminate by 'ret' it reset MCU as stack is empty
+; otherwise it can terminate by 'jp cli'
+    ret 
+.endif 
 

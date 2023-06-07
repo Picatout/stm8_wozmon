@@ -1663,22 +1663,22 @@ Hexadecimal [24-Bits]
       008010 20 05            [ 2]   92     jra GETLINE
       008012                         93 ESCAPE: 
       008012 A6 5C            [ 1]   94     ld a,#0X5C
-      008014 CD 81 14         [ 4]   95     call ECHO
+      008014 CD 81 08         [ 4]   95     call ECHO
       008017                         96 GETLINE: 
       008017 90 5F            [ 1]   97     clrw y 
       008019 A6 0D            [ 1]   98     ld a,#CR 
-      00801B CD 81 14         [ 4]   99     call ECHO 
+      00801B CD 81 08         [ 4]   99     call ECHO 
       00801E A6 23            [ 1]  100     ld a,#'# 
-      008020 CD 81 14         [ 4]  101     call ECHO
+      008020 CD 81 08         [ 4]  101     call ECHO
       008023 20 13            [ 2]  102     jra NEXTCHAR 
       008025                        103 BACKSPACE:
       008025 90 5D            [ 2]  104     tnzw y 
       008027 27 0F            [ 1]  105     jreq NEXTCHAR 
-      008029 CD 81 14         [ 4]  106     call ECHO 
+      008029 CD 81 08         [ 4]  106     call ECHO 
       00802C A6 20            [ 1]  107     ld a,#SPACE 
-      00802E CD 81 14         [ 4]  108     call ECHO 
+      00802E CD 81 08         [ 4]  108     call ECHO 
       008031 A6 08            [ 1]  109     ld a,#BS 
-      008033 CD 81 14         [ 4]  110     call ECHO 
+      008033 CD 81 08         [ 4]  110     call ECHO 
       008036 90 5A            [ 2]  111     decw y 
       008038                        112 NEXTCHAR:
       008038 72 0B 52 40 FB   [ 2]  113     btjf UART_SR,#UART_SR_RXNE,. 
@@ -1700,7 +1700,7 @@ Hexadecimal [24-Bits]
 
 
 
-      00804E CD 81 14         [ 4]  127     call ECHO
+      00804E CD 81 08         [ 4]  127     call ECHO
       008051 A1 0D            [ 1]  128     cp a,#CR 
       008053 27 08            [ 1]  129     jreq EOL
       008055 A1 20            [ 1]  130     cp a,#SPACE 
@@ -1730,159 +1730,162 @@ Hexadecimal [24-Bits]
       008079 A1 3A            [ 1]  151     cp a,#STOR 
       00807B 27 EA            [ 1]  152     jreq SETMODE 
       00807D A1 52            [ 1]  153     cp a,#'R 
-      00807F 27 51            [ 1]  154     jreq RUN
+      00807F 27 45            [ 1]  154     jreq RUN
       008081                        155     _stryz YSAV ; save for comparison
       008081 90 BF 1E                 1     .byte 0x90,0xbf,YSAV 
       008084 5F               [ 1]  156     clrw x 
       008085                        157 NEXTHEX:
       008085 90 D6 01 00      [ 1]  158     ld a,(IN,y)
-      008089 A1 30            [ 1]  159     cp a,#'0 
-      00808B 2B 22            [ 1]  160     jrmi NOTHEX 
-      00808D A1 47            [ 1]  161     cp a,#'G 
-      00808F 2A 1E            [ 1]  162     jrpl NOTHEX 
-      008091 A0 30            [ 1]  163     sub a,#'0
-      008093 A1 0A            [ 1]  164     cp a,#0xA  
-      008095 2B 0A            [ 1]  165     jrmi DIG   ; 0..9 
-                                    166 ; character filter 
-                                    167 ; reject ':'..'@'
-      008097 A1 11            [ 1]  168     cp a,#0x11 
-      008099 2B 14            [ 1]  169     jrmi NOTHEX 
-      00809B A0 07            [ 1]  170     sub a,#7
-      00809D A1 10            [ 1]  171     cp a,#0x10 ; reject >'F' 
-      00809F 2A 0E            [ 1]  172     jrpl NOTHEX  
-      0080A1                        173 DIG: 
-      0080A1 4B 04            [ 1]  174     push #4
-      0080A3 4E               [ 1]  175     swap a 
-      0080A4                        176 HEXSHIFT:
-      0080A4 48               [ 1]  177     sll a 
+                           000000   159 .if 0
+                                    160     cp a,#'0 
+                                    161     jrmi NOTHEX
+                                    162     sub a,#'0
+                                    163     cp a,#0xA  
+                                    164     jrmi DIG   ; 0..9 
+                                    165     sub a,#7   ; A..F 
+                                    166     cp a,#16
+                                    167     jrpl NOTHEX  
+                           000001   168 .else 
+      008089 A8 30            [ 1]  169     xor a,#0x30 
+      00808B A1 0A            [ 1]  170     cp a,#10 
+      00808D 2B 06            [ 1]  171     jrmi DIG 
+      00808F A1 71            [ 1]  172     cp a,#0x71 
+      008091 2B 10            [ 1]  173     jrmi NOTHEX 
+      008093 A0 67            [ 1]  174     sub a,#0x67
+                                    175 .endif
+      008095                        176 DIG: 
+      008095 4B 04            [ 1]  177     push #4
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 33.
 Hexadecimal [24-Bits]
 
 
 
-      0080A5 59               [ 2]  178     rlcw x  
-      0080A6 0A 01            [ 1]  179     dec (1,sp)
-      0080A8 26 FA            [ 1]  180     jrne HEXSHIFT
-      0080AA 84               [ 1]  181     pop a 
-      0080AB 90 5C            [ 1]  182     incw y
-      0080AD 20 D6            [ 2]  183     jra NEXTHEX
-      0080AF                        184 NOTHEX:
-      0080AF                        185     _strxz LAST 
-      0080AF BF 1C                    1     .byte 0xbf,LAST 
-      0080B1 90 C3 00 1E      [ 2]  186     cpw y,YSAV 
-      0080B5 26 03            [ 1]  187     jrne GOTNUMBER
-      0080B7 CC 80 17         [ 2]  188     jp GETLINE ; no hex number  
-      0080BA                        189 GOTNUMBER: 
-      0080BA                        190     _ldaz MODE 
-      0080BA B6 20                    1     .byte 0xb6,MODE 
-      0080BC 26 07            [ 1]  191     jrne NOTREAD ; not READ mode  
-                                    192 ; set XAM and STOR address 
-      0080BE                        193     _strxz XAMADR 
-      0080BE BF 18                    1     .byte 0xbf,XAMADR 
-      0080C0                        194     _strxz STORADR 
-      0080C0 BF 1A                    1     .byte 0xbf,STORADR 
-      0080C2 4F               [ 1]  195     clr a 
-      0080C3 20 15            [ 2]  196     jra NXTPRNT 
-      0080C5                        197 NOTREAD:  
-                                    198 ; which mode then?        
-      0080C5 A1 3A            [ 1]  199     cp a,#': 
-      0080C7 26 0C            [ 1]  200     jrne RANGE_END 
-      0080C9 9F               [ 1]  201     ld a,xl 
-      0080CA                        202     _ldxz STORADR 
-      0080CA BE 1A                    1     .byte 0xbe,STORADR 
-      0080CC F7               [ 1]  203     ld (x),a 
-      0080CD 5C               [ 1]  204     incw x 
-      0080CE                        205     _strxz STORADR 
-      0080CE BF 1A                    1     .byte 0xbf,STORADR 
-      0080D0                        206 TONEXTITEM:
-      0080D0 20 99            [ 2]  207     jra NEXTITEM 
-      0080D2                        208 RUN:
-      0080D2                        209     _ldxz LAST 
-      0080D2 BE 1C                    1     .byte 0xbe,LAST 
-      0080D4 FC               [ 2]  210     jp (x)
-      0080D5                        211 RANGE_END:
-      0080D5                        212     _strxz LAST 
-      0080D5 BF 1C                    1     .byte 0xbf,LAST 
-      0080D7                        213     _ldxz XAMADR
-      0080D7 BE 18                    1     .byte 0xbe,XAMADR 
-      0080D9 9F               [ 1]  214     ld a,xl
-      0080DA                        215 NXTPRNT:
-      0080DA 26 12            [ 1]  216     jrne PRDATA 
-      0080DC A6 0D            [ 1]  217     ld a,#CR 
-      0080DE CD 81 14         [ 4]  218     call ECHO 
-      0080E1 9E               [ 1]  219     ld a,xh 
-      0080E2 CD 81 04         [ 4]  220     call PRBYTE 
-      0080E5 9F               [ 1]  221     ld a,xl 
-      0080E6 CD 81 04         [ 4]  222     call PRBYTE 
-      0080E9 A6 3A            [ 1]  223     ld a,#': 
+      008097 4E               [ 1]  178     swap a 
+      008098                        179 HEXSHIFT:
+      008098 48               [ 1]  180     sll a 
+      008099 59               [ 2]  181     rlcw x  
+      00809A 0A 01            [ 1]  182     dec (1,sp)
+      00809C 26 FA            [ 1]  183     jrne HEXSHIFT
+      00809E 84               [ 1]  184     pop a 
+      00809F 90 5C            [ 1]  185     incw y
+      0080A1 20 E2            [ 2]  186     jra NEXTHEX
+      0080A3                        187 NOTHEX:
+      0080A3 90 C3 00 1E      [ 2]  188     cpw y,YSAV 
+      0080A7 26 03            [ 1]  189     jrne GOTNUMBER
+      0080A9 CC 80 17         [ 2]  190     jp GETLINE ; no hex number  
+      0080AC                        191 GOTNUMBER: 
+      0080AC                        192     _ldaz MODE 
+      0080AC B6 20                    1     .byte 0xb6,MODE 
+      0080AE 26 09            [ 1]  193     jrne NOTREAD ; not READ mode  
+                                    194 ; set XAM and STOR address 
+      0080B0                        195     _strxz XAMADR 
+      0080B0 BF 18                    1     .byte 0xbf,XAMADR 
+      0080B2                        196     _strxz STORADR 
+      0080B2 BF 1A                    1     .byte 0xbf,STORADR 
+      0080B4                        197     _strxz LAST 
+      0080B4 BF 1C                    1     .byte 0xbf,LAST 
+      0080B6 4F               [ 1]  198     clr a 
+      0080B7 20 15            [ 2]  199     jra NXTPRNT 
+      0080B9                        200 NOTREAD:  
+                                    201 ; which mode then?        
+      0080B9 A1 3A            [ 1]  202     cp a,#': 
+      0080BB 26 0C            [ 1]  203     jrne XAM_BLOCK
+      0080BD 9F               [ 1]  204     ld a,xl 
+      0080BE                        205     _ldxz STORADR 
+      0080BE BE 1A                    1     .byte 0xbe,STORADR 
+      0080C0 F7               [ 1]  206     ld (x),a 
+      0080C1 5C               [ 1]  207     incw x 
+      0080C2                        208     _strxz STORADR 
+      0080C2 BF 1A                    1     .byte 0xbf,STORADR 
+      0080C4                        209 TONEXTITEM:
+      0080C4 20 A5            [ 2]  210     jra NEXTITEM 
+      0080C6                        211 RUN:
+      0080C6                        212     _ldxz LAST 
+      0080C6 BE 1C                    1     .byte 0xbe,LAST 
+      0080C8 FC               [ 2]  213     jp (x)
+      0080C9                        214 XAM_BLOCK:
+      0080C9                        215     _strxz LAST 
+      0080C9 BF 1C                    1     .byte 0xbf,LAST 
+      0080CB                        216     _ldxz XAMADR
+      0080CB BE 18                    1     .byte 0xbe,XAMADR 
+      0080CD 9F               [ 1]  217     ld a,xl
+      0080CE                        218 NXTPRNT:
+      0080CE 26 12            [ 1]  219     jrne PRDATA 
+      0080D0 A6 0D            [ 1]  220     ld a,#CR 
+      0080D2 CD 81 08         [ 4]  221     call ECHO 
+      0080D5 9E               [ 1]  222     ld a,xh 
+      0080D6 CD 80 F8         [ 4]  223     call PRBYTE 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 34.
 Hexadecimal [24-Bits]
 
 
 
-      0080EB CD 81 14         [ 4]  224     call ECHO 
-      0080EE                        225 PRDATA:
-      0080EE A6 20            [ 1]  226     ld a,#SPACE 
-      0080F0 CD 81 14         [ 4]  227     call ECHO
-      0080F3 F6               [ 1]  228     ld a,(x)
-      0080F4 CD 81 04         [ 4]  229     call PRBYTE
-      0080F7 5C               [ 1]  230     incw x
-      0080F8                        231     _strxz XAMADR  
-      0080F8 BF 18                    1     .byte 0xbf,XAMADR 
-      0080FA                        232 XAMNEXT:
-      0080FA C3 00 1C         [ 2]  233     cpw x,LAST 
-      0080FD 22 D1            [ 1]  234     jrugt TONEXTITEM
-      0080FF                        235 MOD8CHK:
-      0080FF 9F               [ 1]  236     ld a,xl 
-      008100 A4 07            [ 1]  237     and a,#7 
-      008102 20 D6            [ 2]  238     jra NXTPRNT
-      008104                        239 PRBYTE:
-      008104 88               [ 1]  240     push a 
-      008105 4E               [ 1]  241     swap a 
-      008106 CD 81 0A         [ 4]  242     call PRHEX 
-      008109 84               [ 1]  243     pop a 
-      00810A                        244 PRHEX:
-      00810A A4 0F            [ 1]  245     and a,#15 
-      00810C AB 30            [ 1]  246     add a,#'0
-      00810E A1 3A            [ 1]  247     cp a,#'9+1  
-      008110 2B 02            [ 1]  248     jrmi ECHO 
-      008112 AB 07            [ 1]  249     add a,#7 
-      008114                        250 ECHO:
-      008114 72 0F 52 40 FB   [ 2]  251     btjf UART_SR,#UART_SR_TXE,.
-      008119 C7 52 41         [ 1]  252     ld UART_DR,a 
-      00811C 81               [ 4]  253     RET 
-                                    254 
-                                    255 ;----------------------------
-                                    256 ; code to test 'R' command 
-                                    257 ; blink LED on NUCLEO board 
+      0080D9 9F               [ 1]  224     ld a,xl 
+      0080DA CD 80 F8         [ 4]  225     call PRBYTE 
+      0080DD A6 3A            [ 1]  226     ld a,#': 
+      0080DF CD 81 08         [ 4]  227     call ECHO 
+      0080E2                        228 PRDATA:
+      0080E2 A6 20            [ 1]  229     ld a,#SPACE 
+      0080E4 CD 81 08         [ 4]  230     call ECHO
+      0080E7 F6               [ 1]  231     ld a,(x)
+      0080E8 CD 80 F8         [ 4]  232     call PRBYTE
+      0080EB 5C               [ 1]  233     incw x
+      0080EC                        234     _strxz XAMADR  
+      0080EC BF 18                    1     .byte 0xbf,XAMADR 
+      0080EE                        235 XAMNEXT:
+      0080EE C3 00 1C         [ 2]  236     cpw x,LAST 
+      0080F1 22 D1            [ 1]  237     jrugt TONEXTITEM
+      0080F3                        238 MOD8CHK:
+      0080F3 9F               [ 1]  239     ld a,xl 
+      0080F4 A4 07            [ 1]  240     and a,#7 
+      0080F6 20 D6            [ 2]  241     jra NXTPRNT
+      0080F8                        242 PRBYTE:
+      0080F8 88               [ 1]  243     push a 
+      0080F9 4E               [ 1]  244     swap a 
+      0080FA CD 80 FE         [ 4]  245     call PRHEX 
+      0080FD 84               [ 1]  246     pop a 
+      0080FE                        247 PRHEX:
+      0080FE A4 0F            [ 1]  248     and a,#15 
+      008100 AB 30            [ 1]  249     add a,#'0
+      008102 A1 3A            [ 1]  250     cp a,#'9+1  
+      008104 2B 02            [ 1]  251     jrmi ECHO 
+      008106 AB 07            [ 1]  252     add a,#7 
+      008108                        253 ECHO:
+      008108 72 0F 52 40 FB   [ 2]  254     btjf UART_SR,#UART_SR_TXE,.
+      00810D C7 52 41         [ 1]  255     ld UART_DR,a 
+      008110 81               [ 4]  256     RET 
+                                    257 
                                     258 ;----------------------------
-                           000000   259 .if 0
-                                    260 r_test:
-                                    261     bset PC_DDR,#5
-                                    262     bset PC_CR1,#5
-                                    263 1$: bcpl PC_ODR,#5 
-                                    264 ; delay 
-                                    265     ld a,#4
-                                    266     clrw x
-                                    267 2$:
-                                    268     decw x 
-                                    269     jrne 2$
-                                    270     dec a 
-                                    271     jrne 2$ 
-                                    272 ; if key exit 
-                                    273     btjf UART_SR,#UART_SR_RXNE,1$
-                                    274     ld a,UART_DR 
-                                    275 ; if code terminate by 'ret' it reset MCU as stack is empty
-                                    276 ; otherwise it can terminate by 'jp cli'
-                                    277     ;ret
+                                    259 ; code to test 'R' command 
+                                    260 ; blink LED on NUCLEO board 
+                                    261 ;----------------------------
+                           000001   262 .if 1
+      008111                        263 r_test:
+      008111 72 1A 50 0C      [ 1]  264     bset PC_DDR,#5
+      008115 72 1A 50 0D      [ 1]  265     bset PC_CR1,#5
+      008119 90 1A 50 0A      [ 1]  266 1$: bcpl PC_ODR,#5 
+                                    267 ; delay 
+      00811D A6 04            [ 1]  268     ld a,#4
+      00811F 5F               [ 1]  269     clrw x
+      008120                        270 2$:
+      008120 5A               [ 2]  271     decw x 
+      008121 26 FD            [ 1]  272     jrne 2$
+      008123 4A               [ 1]  273     dec a 
+      008124 26 FA            [ 1]  274     jrne 2$ 
+                                    275 ; if key exit 
+      008126 72 0B 52 40 EE   [ 2]  276     btjf UART_SR,#UART_SR_RXNE,1$
+      00812B C6 52 41         [ 1]  277     ld a,UART_DR 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 35.
 Hexadecimal [24-Bits]
 
 
 
-                                    278     jp RESET  
-                                    279 .endif 
-                                    280 
+                                    278 ; if code terminate by 'ret' it reset MCU as stack is empty
+                                    279 ; otherwise it can terminate by 'jp cli'
+                                    280     ;ret
+      00812E CC 80 04         [ 2]  281     jp RESET  
+                                    282 .endif 
+                                    283 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 36.
 Hexadecimal [24-Bits]
 
@@ -1968,11 +1971,11 @@ Symbol Table
     DEVID_LO=  0048D4     |     DEVID_LO=  0048D5     |     DEVID_LO=  0048D6 
     DEVID_LO=  0048D7     |     DEVID_LO=  0048D8     |     DEVID_WA=  0048D1 
     DEVID_XH=  0048CE     |     DEVID_XL=  0048CD     |     DEVID_YH=  0048D0 
-    DEVID_YL=  0048CF     |   8 DIG        0080A1 R   |     DLE     =  000010 
+    DEVID_YL=  0048CF     |   8 DIG        008095 R   |     DLE     =  000010 
     DM_BK1RE=  007F90     |     DM_BK1RH=  007F91     |     DM_BK1RL=  007F92 
     DM_BK2RE=  007F93     |     DM_BK2RH=  007F94     |     DM_BK2RL=  007F95 
     DM_CR1  =  007F96     |     DM_CR2  =  007F97     |     DM_CSR1 =  007F98 
-    DM_CSR2 =  007F99     |     DM_ENFCT=  007F9A     |   8 ECHO       008114 R
+    DM_CSR2 =  007F99     |     DM_ENFCT=  007F9A     |   8 ECHO       008108 R
     EEPROM_B=  004000     |     EEPROM_E=  0043FF     |     EEPROM_S=  000400 
     EM      =  000019     |     ENQ     =  000005     |     EOF     =  00001A 
   8 EOL        00805D R   |     EOT     =  000004     |     ESC     =  00001B 
@@ -1993,10 +1996,10 @@ Symbol Table
     FLASH_NF=  000003     |     FLASH_NF=  000004     |     FLASH_NF=  000005 
     FLASH_PU=  005062     |     FLASH_PU=  000056     |     FLASH_PU=  0000AE 
     FLASH_SI=  010000     |     FLASH_WS=  00480D     |     FLSI    =  01F400 
-    FS      =  00001C     |   8 GETLINE    008017 R   |   8 GOTNUMBE   0080BA R
+    FS      =  00001C     |   8 GETLINE    008017 R   |   8 GOTNUMBE   0080AC R
     GPIO_BAS=  005000     |     GPIO_CR1=  000003     |     GPIO_CR2=  000004 
     GPIO_DDR=  000002     |     GPIO_IDR=  000001     |     GPIO_ODR=  000000 
-    GPIO_SIZ=  000005     |     GS      =  00001D     |   8 HEXSHIFT   0080A4 R
+    GPIO_SIZ=  000005     |     GS      =  00001D     |   8 HEXSHIFT   008098 R
     HSECNT  =  004809     |     I2C_BASE=  005210     |     I2C_CCRH=  00521C 
     I2C_CCRH=  000080     |     I2C_CCRH=  0000C0     |     I2C_CCRH=  000080 
     I2C_CCRH=  000000     |     I2C_CCRH=  000001     |     I2C_CCRH=  000000 
@@ -2053,15 +2056,15 @@ Symbol Table
     IWDG_KEY=  0000AA     |     IWDG_KR =  0050E0     |     IWDG_PR =  0050E1 
     IWDG_RLR=  0050E2     |   4 LAST       00001C R   |     LED_BIT =  000005 
     LED_MASK=  000020     |     LED_PORT=  00500A     |     LF      =  00000A 
-  8 MOD8CHK    0080FF R   |   4 MODE       000020 R   |     NAFR    =  004804 
+  8 MOD8CHK    0080F3 R   |   4 MODE       000020 R   |     NAFR    =  004804 
     NAK     =  000015     |     NCLKOPT =  004808     |   8 NEXTCHAR   008038 R
   8 NEXTHEX    008085 R   |   8 NEXTITEM   00806B R   |     NFLASH_W=  00480E 
     NHSECNT =  00480A     |     NOPT1   =  004802     |     NOPT2   =  004804 
     NOPT3   =  004806     |     NOPT4   =  004808     |     NOPT5   =  00480A 
     NOPT6   =  00480C     |     NOPT7   =  00480E     |     NOPTBL  =  00487F 
-  8 NOTHEX     0080AF R   |   8 NOTREAD    0080C5 R   |     NUBC    =  004802 
+  8 NOTHEX     0080A3 R   |   8 NOTREAD    0080B9 R   |     NUBC    =  004802 
     NWDGOPT =  004806     |     NWDGOPT_=  FFFFFFFD     |     NWDGOPT_=  FFFFFFFC 
-    NWDGOPT_=  FFFFFFFF     |     NWDGOPT_=  FFFFFFFE     |   8 NXTPRNT    0080DA R
+    NWDGOPT_=  FFFFFFFF     |     NWDGOPT_=  FFFFFFFE     |   8 NXTPRNT    0080CE R
     OFS_UART=  000002     |     OFS_UART=  000003     |     OFS_UART=  000004 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 39.
 Hexadecimal [24-Bits]
@@ -2097,159 +2100,160 @@ Symbol Table
     PH_DDR  =  005025     |     PH_IDR  =  005024     |     PH_ODR  =  005023 
     PI      =  000028     |     PI_BASE =  005028     |     PI_CR1  =  00502B 
     PI_CR2  =  00502C     |     PI_DDR  =  00502A     |     PI_IDR  =  005029 
-    PI_ODR  =  005028     |   8 PRBYTE     008104 R   |   8 PRDATA     0080EE R
-  8 PRHEX      00810A R   |     RAM_BASE=  000000     |     RAM_END =  0017FF 
-    RAM_SIZE=  001800     |   8 RANGE_EN   0080D5 R   |   8 RESET      008004 R
-    ROP     =  004800     |     RS      =  00001E     |     RST_SR  =  0050B3 
-  8 RUN        0080D2 R   |     SEMIC   =  00003B     |   8 SETMODE    008067 R
-    SFR_BASE=  005000     |     SFR_END =  0057FF     |     SHARP   =  000023 
-    SI      =  00000F     |     SO      =  00000E     |     SOH     =  000001 
-    SPACE   =  000020     |     SPI_CR1 =  005200     |     SPI_CR1_=  000003 
-    SPI_CR1_=  000000     |     SPI_CR1_=  000001     |     SPI_CR1_=  000007 
-    SPI_CR1_=  000002     |     SPI_CR1_=  000006     |     SPI_CR2 =  005201 
-    SPI_CR2_=  000007     |     SPI_CR2_=  000006     |     SPI_CR2_=  000005 
-    SPI_CR2_=  000004     |     SPI_CR2_=  000002     |     SPI_CR2_=  000000 
-    SPI_CR2_=  000001     |     SPI_CRCP=  005205     |     SPI_DR  =  005204 
-    SPI_ICR =  005202     |     SPI_RXCR=  005206     |     SPI_SR  =  005203 
-    SPI_SR_B=  000007     |     SPI_SR_C=  000004     |     SPI_SR_M=  000005 
-    SPI_SR_O=  000006     |     SPI_SR_R=  000000     |     SPI_SR_T=  000001 
-    SPI_SR_W=  000003     |     SPI_TXCR=  005207     |     STACK_SI=  000100 
-    STOR    =  00003A     |   4 STORADR    00001A R   |     STX     =  000002 
-    SUB     =  00001A     |     SWIM_CSR=  007F80     |     SYN     =  000016 
-    TAB     =  000009     |     TICK    =  000027     |     TIM1_ARR=  005262 
-    TIM1_ARR=  005263     |     TIM1_BKR=  00526D     |     TIM1_CCE=  00525C 
-    TIM1_CCE=  00525D     |     TIM1_CCM=  005258     |     TIM1_CCM=  000000 
-    TIM1_CCM=  000001     |     TIM1_CCM=  000004     |     TIM1_CCM=  000005 
-    TIM1_CCM=  000006     |     TIM1_CCM=  000007     |     TIM1_CCM=  000002 
-    TIM1_CCM=  000003     |     TIM1_CCM=  000007     |     TIM1_CCM=  000002 
+    PI_ODR  =  005028     |   8 PRBYTE     0080F8 R   |   8 PRDATA     0080E2 R
+  8 PRHEX      0080FE R   |     RAM_BASE=  000000     |     RAM_END =  0017FF 
+    RAM_SIZE=  001800     |   8 RESET      008004 R   |     ROP     =  004800 
+    RS      =  00001E     |     RST_SR  =  0050B3     |   8 RUN        0080C6 R
+    SEMIC   =  00003B     |   8 SETMODE    008067 R   |     SFR_BASE=  005000 
+    SFR_END =  0057FF     |     SHARP   =  000023     |     SI      =  00000F 
+    SO      =  00000E     |     SOH     =  000001     |     SPACE   =  000020 
+    SPI_CR1 =  005200     |     SPI_CR1_=  000003     |     SPI_CR1_=  000000 
+    SPI_CR1_=  000001     |     SPI_CR1_=  000007     |     SPI_CR1_=  000002 
+    SPI_CR1_=  000006     |     SPI_CR2 =  005201     |     SPI_CR2_=  000007 
+    SPI_CR2_=  000006     |     SPI_CR2_=  000005     |     SPI_CR2_=  000004 
+    SPI_CR2_=  000002     |     SPI_CR2_=  000000     |     SPI_CR2_=  000001 
+    SPI_CRCP=  005205     |     SPI_DR  =  005204     |     SPI_ICR =  005202 
+    SPI_RXCR=  005206     |     SPI_SR  =  005203     |     SPI_SR_B=  000007 
+    SPI_SR_C=  000004     |     SPI_SR_M=  000005     |     SPI_SR_O=  000006 
+    SPI_SR_R=  000000     |     SPI_SR_T=  000001     |     SPI_SR_W=  000003 
+    SPI_TXCR=  005207     |     STACK_SI=  000100     |     STOR    =  00003A 
+  4 STORADR    00001A R   |     STX     =  000002     |     SUB     =  00001A 
+    SWIM_CSR=  007F80     |     SYN     =  000016     |     TAB     =  000009 
+    TICK    =  000027     |     TIM1_ARR=  005262     |     TIM1_ARR=  005263 
+    TIM1_BKR=  00526D     |     TIM1_CCE=  00525C     |     TIM1_CCE=  00525D 
+    TIM1_CCM=  005258     |     TIM1_CCM=  000000     |     TIM1_CCM=  000001 
     TIM1_CCM=  000004     |     TIM1_CCM=  000005     |     TIM1_CCM=  000006 
+    TIM1_CCM=  000007     |     TIM1_CCM=  000002     |     TIM1_CCM=  000003 
+    TIM1_CCM=  000007     |     TIM1_CCM=  000002     |     TIM1_CCM=  000004 
+    TIM1_CCM=  000005     |     TIM1_CCM=  000006     |     TIM1_CCM=  000003 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 40.
 Hexadecimal [24-Bits]
 
 Symbol Table
 
-    TIM1_CCM=  000003     |     TIM1_CCM=  005259     |     TIM1_CCM=  000000 
-    TIM1_CCM=  000001     |     TIM1_CCM=  000004     |     TIM1_CCM=  000005 
-    TIM1_CCM=  000006     |     TIM1_CCM=  000007     |     TIM1_CCM=  000002 
-    TIM1_CCM=  000003     |     TIM1_CCM=  000007     |     TIM1_CCM=  000002 
+    TIM1_CCM=  005259     |     TIM1_CCM=  000000     |     TIM1_CCM=  000001 
     TIM1_CCM=  000004     |     TIM1_CCM=  000005     |     TIM1_CCM=  000006 
-    TIM1_CCM=  000003     |     TIM1_CCM=  00525A     |     TIM1_CCM=  000000 
-    TIM1_CCM=  000001     |     TIM1_CCM=  000004     |     TIM1_CCM=  000005 
-    TIM1_CCM=  000006     |     TIM1_CCM=  000007     |     TIM1_CCM=  000002 
-    TIM1_CCM=  000003     |     TIM1_CCM=  000007     |     TIM1_CCM=  000002 
+    TIM1_CCM=  000007     |     TIM1_CCM=  000002     |     TIM1_CCM=  000003 
+    TIM1_CCM=  000007     |     TIM1_CCM=  000002     |     TIM1_CCM=  000004 
+    TIM1_CCM=  000005     |     TIM1_CCM=  000006     |     TIM1_CCM=  000003 
+    TIM1_CCM=  00525A     |     TIM1_CCM=  000000     |     TIM1_CCM=  000001 
     TIM1_CCM=  000004     |     TIM1_CCM=  000005     |     TIM1_CCM=  000006 
-    TIM1_CCM=  000003     |     TIM1_CCM=  00525B     |     TIM1_CCM=  000000 
-    TIM1_CCM=  000001     |     TIM1_CCM=  000004     |     TIM1_CCM=  000005 
-    TIM1_CCM=  000006     |     TIM1_CCM=  000007     |     TIM1_CCM=  000002 
-    TIM1_CCM=  000003     |     TIM1_CCM=  000007     |     TIM1_CCM=  000002 
+    TIM1_CCM=  000007     |     TIM1_CCM=  000002     |     TIM1_CCM=  000003 
+    TIM1_CCM=  000007     |     TIM1_CCM=  000002     |     TIM1_CCM=  000004 
+    TIM1_CCM=  000005     |     TIM1_CCM=  000006     |     TIM1_CCM=  000003 
+    TIM1_CCM=  00525B     |     TIM1_CCM=  000000     |     TIM1_CCM=  000001 
     TIM1_CCM=  000004     |     TIM1_CCM=  000005     |     TIM1_CCM=  000006 
-    TIM1_CCM=  000003     |     TIM1_CCR=  005265     |     TIM1_CCR=  005266 
-    TIM1_CCR=  005267     |     TIM1_CCR=  005268     |     TIM1_CCR=  005269 
-    TIM1_CCR=  00526A     |     TIM1_CCR=  00526B     |     TIM1_CCR=  00526C 
-    TIM1_CNT=  00525E     |     TIM1_CNT=  00525F     |     TIM1_CR1=  005250 
-    TIM1_CR2=  005251     |     TIM1_CR2=  000000     |     TIM1_CR2=  000002 
-    TIM1_CR2=  000004     |     TIM1_CR2=  000005     |     TIM1_CR2=  000006 
-    TIM1_DTR=  00526E     |     TIM1_EGR=  005257     |     TIM1_EGR=  000007 
-    TIM1_EGR=  000001     |     TIM1_EGR=  000002     |     TIM1_EGR=  000003 
-    TIM1_EGR=  000004     |     TIM1_EGR=  000005     |     TIM1_EGR=  000006 
-    TIM1_EGR=  000000     |     TIM1_ETR=  005253     |     TIM1_ETR=  000006 
-    TIM1_ETR=  000000     |     TIM1_ETR=  000001     |     TIM1_ETR=  000002 
-    TIM1_ETR=  000003     |     TIM1_ETR=  000007     |     TIM1_ETR=  000004 
-    TIM1_ETR=  000005     |     TIM1_IER=  005254     |     TIM1_IER=  000007 
-    TIM1_IER=  000001     |     TIM1_IER=  000002     |     TIM1_IER=  000003 
-    TIM1_IER=  000004     |     TIM1_IER=  000005     |     TIM1_IER=  000006 
-    TIM1_IER=  000000     |     TIM1_OIS=  00526F     |     TIM1_PSC=  005260 
-    TIM1_PSC=  005261     |     TIM1_RCR=  005264     |     TIM1_SMC=  005252 
-    TIM1_SMC=  000007     |     TIM1_SMC=  000000     |     TIM1_SMC=  000001 
-    TIM1_SMC=  000002     |     TIM1_SMC=  000004     |     TIM1_SMC=  000005 
-    TIM1_SMC=  000006     |     TIM1_SR1=  005255     |     TIM1_SR1=  000007 
-    TIM1_SR1=  000001     |     TIM1_SR1=  000002     |     TIM1_SR1=  000003 
-    TIM1_SR1=  000004     |     TIM1_SR1=  000005     |     TIM1_SR1=  000006 
-    TIM1_SR1=  000000     |     TIM1_SR2=  005256     |     TIM1_SR2=  000001 
-    TIM1_SR2=  000002     |     TIM1_SR2=  000003     |     TIM1_SR2=  000004 
-    TIM2_ARR=  00530D     |     TIM2_ARR=  00530E     |     TIM2_CCE=  005308 
-    TIM2_CCE=  000000     |     TIM2_CCE=  000001     |     TIM2_CCE=  000004 
-    TIM2_CCE=  000005     |     TIM2_CCE=  005309     |     TIM2_CCM=  005305 
-    TIM2_CCM=  005306     |     TIM2_CCM=  005307     |     TIM2_CCM=  000000 
-    TIM2_CCM=  000004     |     TIM2_CCM=  000003     |     TIM2_CCR=  00530F 
-    TIM2_CCR=  005310     |     TIM2_CCR=  005311     |     TIM2_CCR=  005312 
-    TIM2_CCR=  005313     |     TIM2_CCR=  005314     |     TIM2_CNT=  00530A 
-    TIM2_CNT=  00530B     |     TIM2_CR1=  005300     |     TIM2_CR1=  000007 
-    TIM2_CR1=  000000     |     TIM2_CR1=  000003     |     TIM2_CR1=  000001 
-    TIM2_CR1=  000002     |     TIM2_EGR=  005304     |     TIM2_EGR=  000001 
-    TIM2_EGR=  000002     |     TIM2_EGR=  000003     |     TIM2_EGR=  000006 
-    TIM2_EGR=  000000     |     TIM2_IER=  005301     |     TIM2_PSC=  00530C 
-    TIM2_SR1=  005302     |     TIM2_SR2=  005303     |     TIM3_ARR=  00532B 
-    TIM3_ARR=  00532C     |     TIM3_CCE=  005327     |     TIM3_CCE=  000000 
-    TIM3_CCE=  000001     |     TIM3_CCE=  000004     |     TIM3_CCE=  000005 
-    TIM3_CCE=  000000     |     TIM3_CCE=  000001     |     TIM3_CCM=  005325 
+    TIM1_CCM=  000007     |     TIM1_CCM=  000002     |     TIM1_CCM=  000003 
+    TIM1_CCM=  000007     |     TIM1_CCM=  000002     |     TIM1_CCM=  000004 
+    TIM1_CCM=  000005     |     TIM1_CCM=  000006     |     TIM1_CCM=  000003 
+    TIM1_CCR=  005265     |     TIM1_CCR=  005266     |     TIM1_CCR=  005267 
+    TIM1_CCR=  005268     |     TIM1_CCR=  005269     |     TIM1_CCR=  00526A 
+    TIM1_CCR=  00526B     |     TIM1_CCR=  00526C     |     TIM1_CNT=  00525E 
+    TIM1_CNT=  00525F     |     TIM1_CR1=  005250     |     TIM1_CR2=  005251 
+    TIM1_CR2=  000000     |     TIM1_CR2=  000002     |     TIM1_CR2=  000004 
+    TIM1_CR2=  000005     |     TIM1_CR2=  000006     |     TIM1_DTR=  00526E 
+    TIM1_EGR=  005257     |     TIM1_EGR=  000007     |     TIM1_EGR=  000001 
+    TIM1_EGR=  000002     |     TIM1_EGR=  000003     |     TIM1_EGR=  000004 
+    TIM1_EGR=  000005     |     TIM1_EGR=  000006     |     TIM1_EGR=  000000 
+    TIM1_ETR=  005253     |     TIM1_ETR=  000006     |     TIM1_ETR=  000000 
+    TIM1_ETR=  000001     |     TIM1_ETR=  000002     |     TIM1_ETR=  000003 
+    TIM1_ETR=  000007     |     TIM1_ETR=  000004     |     TIM1_ETR=  000005 
+    TIM1_IER=  005254     |     TIM1_IER=  000007     |     TIM1_IER=  000001 
+    TIM1_IER=  000002     |     TIM1_IER=  000003     |     TIM1_IER=  000004 
+    TIM1_IER=  000005     |     TIM1_IER=  000006     |     TIM1_IER=  000000 
+    TIM1_OIS=  00526F     |     TIM1_PSC=  005260     |     TIM1_PSC=  005261 
+    TIM1_RCR=  005264     |     TIM1_SMC=  005252     |     TIM1_SMC=  000007 
+    TIM1_SMC=  000000     |     TIM1_SMC=  000001     |     TIM1_SMC=  000002 
+    TIM1_SMC=  000004     |     TIM1_SMC=  000005     |     TIM1_SMC=  000006 
+    TIM1_SR1=  005255     |     TIM1_SR1=  000007     |     TIM1_SR1=  000001 
+    TIM1_SR1=  000002     |     TIM1_SR1=  000003     |     TIM1_SR1=  000004 
+    TIM1_SR1=  000005     |     TIM1_SR1=  000006     |     TIM1_SR1=  000000 
+    TIM1_SR2=  005256     |     TIM1_SR2=  000001     |     TIM1_SR2=  000002 
+    TIM1_SR2=  000003     |     TIM1_SR2=  000004     |     TIM2_ARR=  00530D 
+    TIM2_ARR=  00530E     |     TIM2_CCE=  005308     |     TIM2_CCE=  000000 
+    TIM2_CCE=  000001     |     TIM2_CCE=  000004     |     TIM2_CCE=  000005 
+    TIM2_CCE=  005309     |     TIM2_CCM=  005305     |     TIM2_CCM=  005306 
+    TIM2_CCM=  005307     |     TIM2_CCM=  000000     |     TIM2_CCM=  000004 
+    TIM2_CCM=  000003     |     TIM2_CCR=  00530F     |     TIM2_CCR=  005310 
+    TIM2_CCR=  005311     |     TIM2_CCR=  005312     |     TIM2_CCR=  005313 
+    TIM2_CCR=  005314     |     TIM2_CNT=  00530A     |     TIM2_CNT=  00530B 
+    TIM2_CR1=  005300     |     TIM2_CR1=  000007     |     TIM2_CR1=  000000 
+    TIM2_CR1=  000003     |     TIM2_CR1=  000001     |     TIM2_CR1=  000002 
+    TIM2_EGR=  005304     |     TIM2_EGR=  000001     |     TIM2_EGR=  000002 
+    TIM2_EGR=  000003     |     TIM2_EGR=  000006     |     TIM2_EGR=  000000 
+    TIM2_IER=  005301     |     TIM2_PSC=  00530C     |     TIM2_SR1=  005302 
+    TIM2_SR2=  005303     |     TIM3_ARR=  00532B     |     TIM3_ARR=  00532C 
+    TIM3_CCE=  005327     |     TIM3_CCE=  000000     |     TIM3_CCE=  000001 
+    TIM3_CCE=  000004     |     TIM3_CCE=  000005     |     TIM3_CCE=  000000 
+    TIM3_CCE=  000001     |     TIM3_CCM=  005325     |     TIM3_CCM=  005326 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 41.
 Hexadecimal [24-Bits]
 
 Symbol Table
 
-    TIM3_CCM=  005326     |     TIM3_CCM=  000000     |     TIM3_CCM=  000004 
-    TIM3_CCM=  000003     |     TIM3_CCR=  00532D     |     TIM3_CCR=  00532E 
-    TIM3_CCR=  00532F     |     TIM3_CCR=  005330     |     TIM3_CNT=  005328 
-    TIM3_CNT=  005329     |     TIM3_CR1=  005320     |     TIM3_CR1=  000007 
-    TIM3_CR1=  000000     |     TIM3_CR1=  000003     |     TIM3_CR1=  000001 
-    TIM3_CR1=  000002     |     TIM3_EGR=  005324     |     TIM3_IER=  005321 
-    TIM3_PSC=  00532A     |     TIM3_SR1=  005322     |     TIM3_SR2=  005323 
-    TIM4_ARR=  005346     |     TIM4_CNT=  005344     |     TIM4_CR1=  005340 
-    TIM4_CR1=  000007     |     TIM4_CR1=  000000     |     TIM4_CR1=  000003 
-    TIM4_CR1=  000001     |     TIM4_CR1=  000002     |     TIM4_EGR=  005343 
-    TIM4_EGR=  000000     |     TIM4_IER=  005341     |     TIM4_IER=  000000 
-    TIM4_PSC=  005345     |     TIM4_PSC=  000000     |     TIM4_PSC=  000007 
-    TIM4_PSC=  000004     |     TIM4_PSC=  000001     |     TIM4_PSC=  000005 
-    TIM4_PSC=  000002     |     TIM4_PSC=  000006     |     TIM4_PSC=  000003 
-    TIM4_PSC=  000000     |     TIM4_PSC=  000001     |     TIM4_PSC=  000002 
-    TIM4_SR =  005342     |     TIM4_SR_=  000000     |     TIM_CR1_=  000007 
-    TIM_CR1_=  000000     |     TIM_CR1_=  000006     |     TIM_CR1_=  000005 
-    TIM_CR1_=  000004     |     TIM_CR1_=  000003     |     TIM_CR1_=  000001 
-    TIM_CR1_=  000002     |   8 TONEXTIT   0080D0 R   |     UART    =  000002 
-    UART1   =  000000     |     UART1_BA=  005230     |     UART1_BR=  005232 
-    UART1_BR=  005233     |     UART1_CR=  005234     |     UART1_CR=  005235 
-    UART1_CR=  005236     |     UART1_CR=  005237     |     UART1_CR=  005238 
-    UART1_DR=  005231     |     UART1_GT=  005239     |     UART1_PO=  000000 
-    UART1_PS=  00523A     |     UART1_RX=  000004     |     UART1_SR=  005230 
-    UART1_TX=  000005     |     UART2   =  000001     |     UART3   =  000002 
-    UART3_BA=  005240     |     UART3_BR=  005242     |     UART3_BR=  005243 
-    UART3_CR=  005244     |     UART3_CR=  005245     |     UART3_CR=  005246 
-    UART3_CR=  005247     |     UART3_CR=  005249     |     UART3_DR=  005241 
-    UART3_PO=  00000F     |     UART3_RX=  000006     |     UART3_SR=  005240 
-    UART3_TX=  000005     |     UART_BRR=  005242     |     UART_BRR=  005243 
-    UART_CR1=  005244     |     UART_CR1=  000004     |     UART_CR1=  000002 
-    UART_CR1=  000000     |     UART_CR1=  000001     |     UART_CR1=  000007 
-    UART_CR1=  000006     |     UART_CR1=  000005     |     UART_CR1=  000003 
-    UART_CR2=  005245     |     UART_CR2=  000004     |     UART_CR2=  000002 
-    UART_CR2=  000005     |     UART_CR2=  000001     |     UART_CR2=  000000 
-    UART_CR2=  000006     |     UART_CR2=  000003     |     UART_CR2=  000007 
-    UART_CR3=  000003     |     UART_CR3=  000001     |     UART_CR3=  000002 
-    UART_CR3=  000000     |     UART_CR3=  000006     |     UART_CR3=  000004 
-    UART_CR3=  000005     |     UART_CR4=  000000     |     UART_CR4=  000001 
-    UART_CR4=  000002     |     UART_CR4=  000003     |     UART_CR4=  000004 
-    UART_CR4=  000006     |     UART_CR4=  000005     |     UART_CR5=  000003 
-    UART_CR5=  000001     |     UART_CR5=  000002     |     UART_CR5=  000004 
-    UART_CR5=  000005     |     UART_CR6=  000004     |     UART_CR6=  000007 
-    UART_CR6=  000001     |     UART_CR6=  000002     |     UART_CR6=  000000 
-    UART_CR6=  000005     |     UART_DR =  005241     |     UART_PCK=  000003 
-    UART_POR=  00500D     |     UART_POR=  00500E     |     UART_POR=  00500C 
-    UART_POR=  00500B     |     UART_POR=  00500A     |     UART_RX_=  000006 
-    UART_SR =  005240     |     UART_SR_=  000001     |     UART_SR_=  000004 
-    UART_SR_=  000002     |     UART_SR_=  000003     |     UART_SR_=  000000 
-    UART_SR_=  000005     |     UART_SR_=  000006     |     UART_SR_=  000007 
-    UART_TX_=  000005     |     UBC     =  004801     |   8 UPPER      00804A R
-    US      =  00001F     |     VT      =  00000B     |     WDGOPT  =  004805 
-    WDGOPT_I=  000002     |     WDGOPT_L=  000003     |     WDGOPT_W=  000000 
-    WDGOPT_W=  000001     |     WWDG_CR =  0050D1     |     WWDG_WR =  0050D2 
-    XAM     =  000000     |   4 XAMADR     000018 R   |   8 XAMNEXT    0080FA R
+    TIM3_CCM=  000000     |     TIM3_CCM=  000004     |     TIM3_CCM=  000003 
+    TIM3_CCR=  00532D     |     TIM3_CCR=  00532E     |     TIM3_CCR=  00532F 
+    TIM3_CCR=  005330     |     TIM3_CNT=  005328     |     TIM3_CNT=  005329 
+    TIM3_CR1=  005320     |     TIM3_CR1=  000007     |     TIM3_CR1=  000000 
+    TIM3_CR1=  000003     |     TIM3_CR1=  000001     |     TIM3_CR1=  000002 
+    TIM3_EGR=  005324     |     TIM3_IER=  005321     |     TIM3_PSC=  00532A 
+    TIM3_SR1=  005322     |     TIM3_SR2=  005323     |     TIM4_ARR=  005346 
+    TIM4_CNT=  005344     |     TIM4_CR1=  005340     |     TIM4_CR1=  000007 
+    TIM4_CR1=  000000     |     TIM4_CR1=  000003     |     TIM4_CR1=  000001 
+    TIM4_CR1=  000002     |     TIM4_EGR=  005343     |     TIM4_EGR=  000000 
+    TIM4_IER=  005341     |     TIM4_IER=  000000     |     TIM4_PSC=  005345 
+    TIM4_PSC=  000000     |     TIM4_PSC=  000007     |     TIM4_PSC=  000004 
+    TIM4_PSC=  000001     |     TIM4_PSC=  000005     |     TIM4_PSC=  000002 
+    TIM4_PSC=  000006     |     TIM4_PSC=  000003     |     TIM4_PSC=  000000 
+    TIM4_PSC=  000001     |     TIM4_PSC=  000002     |     TIM4_SR =  005342 
+    TIM4_SR_=  000000     |     TIM_CR1_=  000007     |     TIM_CR1_=  000000 
+    TIM_CR1_=  000006     |     TIM_CR1_=  000005     |     TIM_CR1_=  000004 
+    TIM_CR1_=  000003     |     TIM_CR1_=  000001     |     TIM_CR1_=  000002 
+  8 TONEXTIT   0080C4 R   |     UART    =  000002     |     UART1   =  000000 
+    UART1_BA=  005230     |     UART1_BR=  005232     |     UART1_BR=  005233 
+    UART1_CR=  005234     |     UART1_CR=  005235     |     UART1_CR=  005236 
+    UART1_CR=  005237     |     UART1_CR=  005238     |     UART1_DR=  005231 
+    UART1_GT=  005239     |     UART1_PO=  000000     |     UART1_PS=  00523A 
+    UART1_RX=  000004     |     UART1_SR=  005230     |     UART1_TX=  000005 
+    UART2   =  000001     |     UART3   =  000002     |     UART3_BA=  005240 
+    UART3_BR=  005242     |     UART3_BR=  005243     |     UART3_CR=  005244 
+    UART3_CR=  005245     |     UART3_CR=  005246     |     UART3_CR=  005247 
+    UART3_CR=  005249     |     UART3_DR=  005241     |     UART3_PO=  00000F 
+    UART3_RX=  000006     |     UART3_SR=  005240     |     UART3_TX=  000005 
+    UART_BRR=  005242     |     UART_BRR=  005243     |     UART_CR1=  005244 
+    UART_CR1=  000004     |     UART_CR1=  000002     |     UART_CR1=  000000 
+    UART_CR1=  000001     |     UART_CR1=  000007     |     UART_CR1=  000006 
+    UART_CR1=  000005     |     UART_CR1=  000003     |     UART_CR2=  005245 
+    UART_CR2=  000004     |     UART_CR2=  000002     |     UART_CR2=  000005 
+    UART_CR2=  000001     |     UART_CR2=  000000     |     UART_CR2=  000006 
+    UART_CR2=  000003     |     UART_CR2=  000007     |     UART_CR3=  000003 
+    UART_CR3=  000001     |     UART_CR3=  000002     |     UART_CR3=  000000 
+    UART_CR3=  000006     |     UART_CR3=  000004     |     UART_CR3=  000005 
+    UART_CR4=  000000     |     UART_CR4=  000001     |     UART_CR4=  000002 
+    UART_CR4=  000003     |     UART_CR4=  000004     |     UART_CR4=  000006 
+    UART_CR4=  000005     |     UART_CR5=  000003     |     UART_CR5=  000001 
+    UART_CR5=  000002     |     UART_CR5=  000004     |     UART_CR5=  000005 
+    UART_CR6=  000004     |     UART_CR6=  000007     |     UART_CR6=  000001 
+    UART_CR6=  000002     |     UART_CR6=  000000     |     UART_CR6=  000005 
+    UART_DR =  005241     |     UART_PCK=  000003     |     UART_POR=  00500D 
+    UART_POR=  00500E     |     UART_POR=  00500C     |     UART_POR=  00500B 
+    UART_POR=  00500A     |     UART_RX_=  000006     |     UART_SR =  005240 
+    UART_SR_=  000001     |     UART_SR_=  000004     |     UART_SR_=  000002 
+    UART_SR_=  000003     |     UART_SR_=  000000     |     UART_SR_=  000005 
+    UART_SR_=  000006     |     UART_SR_=  000007     |     UART_TX_=  000005 
+    UBC     =  004801     |   8 UPPER      00804A R   |     US      =  00001F 
+    VT      =  00000B     |     WDGOPT  =  004805     |     WDGOPT_I=  000002 
+    WDGOPT_L=  000003     |     WDGOPT_W=  000000     |     WDGOPT_W=  000001 
+    WWDG_CR =  0050D1     |     WWDG_WR =  0050D2     |     XAM     =  000000 
+  4 XAMADR     000018 R   |   8 XAMNEXT    0080EE R   |   8 XAM_BLOC   0080C9 R
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 42.
 Hexadecimal [24-Bits]
 
 Symbol Table
 
     XAM_BLOK=  00002E     |     XOFF    =  000013     |     XON     =  000011 
-  4 YSAV       00001E R   |   2 stack_fu   001800 R   |   2 stack_sp   001700 R
+  4 YSAV       00001E R   |   8 r_test     008111 R   |   2 stack_fu   001800 R
+  2 stack_sp   001700 R
 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 43.
 Hexadecimal [24-Bits]
@@ -2264,5 +2268,5 @@ Area Table
    5 DATA2      size     80   flags    8
    6 HOME       size      4   flags    0
    7 CODE       size      0   flags    8
-   8 CODE3      size    119   flags    8
+   8 CODE3      size    12D   flags    8
 

@@ -1661,19 +1661,19 @@ Hexadecimal [24-Bits]
                                      90 
       008010                         91 GETLINE: 
       008010 A6 0D            [ 1]   92     ld a,#CR 
-      008012 CD 80 FD         [ 4]   93     call ECHO 
+      008012 CD 80 FB         [ 4]   93     call ECHO 
       008015 A6 23            [ 1]   94     ld a,#'# 
-      008017 CD 80 FD         [ 4]   95     call ECHO
+      008017 CD 80 FB         [ 4]   95     call ECHO
       00801A 90 5F            [ 1]   96     clrw y 
       00801C 20 13            [ 2]   97     jra NEXTCHAR 
       00801E                         98 BACKSPACE:
       00801E 90 5D            [ 2]   99     tnzw y 
       008020 27 0F            [ 1]  100     jreq NEXTCHAR 
-      008022 CD 80 FD         [ 4]  101     call ECHO 
+      008022 CD 80 FB         [ 4]  101     call ECHO 
       008025 A6 20            [ 1]  102     ld a,#SPACE 
-      008027 CD 80 FD         [ 4]  103     call ECHO 
+      008027 CD 80 FB         [ 4]  103     call ECHO 
       00802A A6 08            [ 1]  104     ld a,#BS 
-      00802C CD 80 FD         [ 4]  105     call ECHO 
+      00802C CD 80 FB         [ 4]  105     call ECHO 
       00802F 90 5A            [ 2]  106     decw y 
       008031                        107 NEXTCHAR:
       008031 72 0B 52 40 FB   [ 2]  108     btjf UART_SR,#UART_SR_RXNE,. 
@@ -1690,7 +1690,7 @@ Hexadecimal [24-Bits]
       008045 A4 DF            [ 1]  119     and a,#0XDF  
       008047                        120 UPPER: ; there is no lower case letter in buffer 
       008047 90 D7 01 00      [ 1]  121     ld (IN,y),a 
-      00804B CD 80 FD         [ 4]  122     call ECHO
+      00804B CD 80 FB         [ 4]  122     call ECHO
       00804E A1 0D            [ 1]  123     cp a,#CR 
       008050 27 04            [ 1]  124     jreq EOL
       008052 90 5C            [ 1]  125     incw y 
@@ -1762,7 +1762,7 @@ Hexadecimal [24-Bits]
 
       0080A8 BF 08                    1     .byte 0xbf,LAST 
       0080AA 4F               [ 1]  177     clr a 
-      0080AB 20 18            [ 2]  178     jra NXTPRNT 
+      0080AB 20 16            [ 2]  178     jra NXTPRNT 
       0080AD                        179 NOTREAD:  
                                     180 ; which mode then?        
       0080AD A1 3A            [ 1]  181     cp a,#': 
@@ -1781,83 +1781,81 @@ Hexadecimal [24-Bits]
       0080BA BE 04                    1     .byte 0xbe,XAMADR 
       0080BC FC               [ 2]  192     jp (x)
       0080BD                        193 XAM_BLOCK:
-      0080BD                        194     _clrz MODE 
-      0080BD 3F 0C                    1     .byte 0x3f, MODE 
-      0080BF                        195     _strxz LAST 
-      0080BF BF 08                    1     .byte 0xbf,LAST 
-      0080C1                        196     _ldxz XAMADR
-      0080C1 BE 04                    1     .byte 0xbe,XAMADR 
-      0080C3 5C               [ 1]  197     incw x 
-      0080C4 9F               [ 1]  198     ld a,xl
-      0080C5                        199 NXTPRNT:
-      0080C5 26 12            [ 1]  200     jrne PRDATA 
-      0080C7 A6 0D            [ 1]  201     ld a,#CR 
-      0080C9 CD 80 FD         [ 4]  202     call ECHO 
-      0080CC 9E               [ 1]  203     ld a,xh 
-      0080CD CD 80 ED         [ 4]  204     call PRBYTE 
-      0080D0 9F               [ 1]  205     ld a,xl 
-      0080D1 CD 80 ED         [ 4]  206     call PRBYTE 
-      0080D4 A6 3A            [ 1]  207     ld a,#': 
-      0080D6 CD 80 FD         [ 4]  208     call ECHO 
-      0080D9                        209 PRDATA:
-      0080D9 A6 20            [ 1]  210     ld a,#SPACE 
-      0080DB CD 80 FD         [ 4]  211     call ECHO
-      0080DE F6               [ 1]  212     ld a,(x)
-      0080DF CD 80 ED         [ 4]  213     call PRBYTE
-      0080E2 5C               [ 1]  214     incw x
-      0080E3                        215 XAMNEXT:
-      0080E3 C3 00 08         [ 2]  216     cpw x,LAST 
-      0080E6 22 D0            [ 1]  217     jrugt TONEXTITEM
-      0080E8                        218 MOD8CHK:
-      0080E8 9F               [ 1]  219     ld a,xl 
-      0080E9 A4 07            [ 1]  220     and a,#7 
-      0080EB 20 D8            [ 2]  221     jra NXTPRNT
-      0080ED                        222 PRBYTE:
-      0080ED 88               [ 1]  223     push a 
-      0080EE 4E               [ 1]  224     swap a 
+      0080BD                        194     _strxz LAST 
+      0080BD BF 08                    1     .byte 0xbf,LAST 
+      0080BF                        195     _ldxz XAMADR
+      0080BF BE 04                    1     .byte 0xbe,XAMADR 
+      0080C1 5C               [ 1]  196     incw x 
+      0080C2 9F               [ 1]  197     ld a,xl
+      0080C3                        198 NXTPRNT:
+      0080C3 26 12            [ 1]  199     jrne PRDATA 
+      0080C5 A6 0D            [ 1]  200     ld a,#CR 
+      0080C7 CD 80 FB         [ 4]  201     call ECHO 
+      0080CA 9E               [ 1]  202     ld a,xh 
+      0080CB CD 80 EB         [ 4]  203     call PRBYTE 
+      0080CE 9F               [ 1]  204     ld a,xl 
+      0080CF CD 80 EB         [ 4]  205     call PRBYTE 
+      0080D2 A6 3A            [ 1]  206     ld a,#': 
+      0080D4 CD 80 FB         [ 4]  207     call ECHO 
+      0080D7                        208 PRDATA:
+      0080D7 A6 20            [ 1]  209     ld a,#SPACE 
+      0080D9 CD 80 FB         [ 4]  210     call ECHO
+      0080DC F6               [ 1]  211     ld a,(x)
+      0080DD CD 80 EB         [ 4]  212     call PRBYTE
+      0080E0 5C               [ 1]  213     incw x
+      0080E1                        214 XAMNEXT:
+      0080E1 C3 00 08         [ 2]  215     cpw x,LAST 
+      0080E4 22 D2            [ 1]  216     jrugt TONEXTITEM
+      0080E6                        217 MOD8CHK:
+      0080E6 9F               [ 1]  218     ld a,xl 
+      0080E7 A4 07            [ 1]  219     and a,#7 
+      0080E9 20 D8            [ 2]  220     jra NXTPRNT
+      0080EB                        221 PRBYTE:
+      0080EB 88               [ 1]  222     push a 
+      0080EC 4E               [ 1]  223     swap a 
+      0080ED CD 80 F1         [ 4]  224     call PRHEX 
+      0080F0 84               [ 1]  225     pop a 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 34.
 Hexadecimal [24-Bits]
 
 
 
-      0080EF CD 80 F3         [ 4]  225     call PRHEX 
-      0080F2 84               [ 1]  226     pop a 
-      0080F3                        227 PRHEX:
-      0080F3 A4 0F            [ 1]  228     and a,#15 
-      0080F5 AB 30            [ 1]  229     add a,#'0
-      0080F7 A1 3A            [ 1]  230     cp a,#'9+1  
-      0080F9 2B 02            [ 1]  231     jrmi ECHO 
-      0080FB AB 07            [ 1]  232     add a,#7 
-      0080FD                        233 ECHO:
-      0080FD 72 0F 52 40 FB   [ 2]  234     btjf UART_SR,#UART_SR_TXE,.
-      008102 C7 52 41         [ 1]  235     ld UART_DR,a 
-      008105 81               [ 4]  236     RET 
-                                    237 
-                                    238 ;----------------------------
-                                    239 ; code to test 'R' command 
-                                    240 ; blink LED on NUCLEO board 
-                                    241 ;----------------------------
-                           000000   242 .if 0
-                                    243 r_test:
-                                    244     bset PC_DDR,#5
-                                    245     bset PC_CR1,#5
-                                    246 1$: bcpl PC_ODR,#5 
-                                    247 ; delay 
-                                    248     ld a,#4
-                                    249     clrw x
-                                    250 2$:
-                                    251     decw x 
-                                    252     jrne 2$
-                                    253     dec a 
-                                    254     jrne 2$ 
-                                    255 ; if key exit 
-                                    256     btjf UART_SR,#UART_SR_RXNE,1$
-                                    257     ld a,UART_DR 
-                                    258 ; reset MCU to ensure monitor
-                                    259 ; with peripherals in known state
-                                    260     _swreset
-                                    261 .endif 
-                                    262 
+      0080F1                        226 PRHEX:
+      0080F1 A4 0F            [ 1]  227     and a,#15 
+      0080F3 AB 30            [ 1]  228     add a,#'0
+      0080F5 A1 3A            [ 1]  229     cp a,#'9+1  
+      0080F7 2B 02            [ 1]  230     jrmi ECHO 
+      0080F9 AB 07            [ 1]  231     add a,#7 
+      0080FB                        232 ECHO:
+      0080FB 72 0F 52 40 FB   [ 2]  233     btjf UART_SR,#UART_SR_TXE,.
+      008100 C7 52 41         [ 1]  234     ld UART_DR,a 
+      008103 81               [ 4]  235     RET 
+                                    236 
+                                    237 ;----------------------------
+                                    238 ; code to test 'R' command 
+                                    239 ; blink LED on NUCLEO board 
+                                    240 ;----------------------------
+                           000000   241 .if 0
+                                    242 r_test:
+                                    243     bset PC_DDR,#5
+                                    244     bset PC_CR1,#5
+                                    245 1$: bcpl PC_ODR,#5 
+                                    246 ; delay 
+                                    247     ld a,#4
+                                    248     clrw x
+                                    249 2$:
+                                    250     decw x 
+                                    251     jrne 2$
+                                    252     dec a 
+                                    253     jrne 2$ 
+                                    254 ; if key exit 
+                                    255     btjf UART_SR,#UART_SR_RXNE,1$
+                                    256     ld a,UART_DR 
+                                    257 ; reset MCU to ensure monitor
+                                    258 ; with peripherals in known state
+                                    259     _swreset
+                                    260 .endif 
+                                    261 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 35.
 Hexadecimal [24-Bits]
 
@@ -1947,7 +1945,7 @@ Symbol Table
     DM_BK1RE=  007F90     |     DM_BK1RH=  007F91     |     DM_BK1RL=  007F92 
     DM_BK2RE=  007F93     |     DM_BK2RH=  007F94     |     DM_BK2RL=  007F95 
     DM_CR1  =  007F96     |     DM_CR2  =  007F97     |     DM_CSR1 =  007F98 
-    DM_CSR2 =  007F99     |     DM_ENFCT=  007F9A     |   8 ECHO       0080FD R
+    DM_CSR2 =  007F99     |     DM_ENFCT=  007F9A     |   8 ECHO       0080FB R
     EEPROM_B=  004000     |     EEPROM_E=  0043FF     |     EEPROM_S=  000400 
     EM      =  000019     |     ENQ     =  000005     |     EOF     =  00001A 
   8 EOL        008056 R   |     EOT     =  000004     |     ESC     =  00001B 
@@ -2027,7 +2025,7 @@ Symbol Table
     IWDG_KEY=  000055     |     IWDG_KEY=  0000CC     |     IWDG_KEY=  0000AA 
     IWDG_KR =  0050E0     |     IWDG_PR =  0050E1     |     IWDG_RLR=  0050E2 
   4 LAST       000008 R   |     LED_BIT =  000005     |     LED_MASK=  000020 
-    LED_PORT=  00500A     |     LF      =  00000A     |   8 MOD8CHK    0080E8 R
+    LED_PORT=  00500A     |     LF      =  00000A     |   8 MOD8CHK    0080E6 R
   4 MODE       00000C R   |     NAFR    =  004804     |     NAK     =  000015 
     NCLKOPT =  004808     |   8 NEXTCHAR   008031 R   |   8 NEXTHEX    008079 R
   8 NEXTITEM   00805F R   |     NFLASH_W=  00480E     |     NHSECNT =  00480A 
@@ -2036,7 +2034,7 @@ Symbol Table
     NOPT7   =  00480E     |     NOPTBL  =  00487F     |   8 NOTHEX     008097 R
   8 NOTREAD    0080AD R   |     NUBC    =  004802     |     NWDGOPT =  004806 
     NWDGOPT_=  FFFFFFFD     |     NWDGOPT_=  FFFFFFFC     |     NWDGOPT_=  FFFFFFFF 
-    NWDGOPT_=  FFFFFFFE     |   8 NXTPRNT    0080C5 R   |     OFS_UART=  000002 
+    NWDGOPT_=  FFFFFFFE     |   8 NXTPRNT    0080C3 R   |     OFS_UART=  000002 
     OFS_UART=  000003     |     OFS_UART=  000004     |     OFS_UART=  000005 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 38.
 Hexadecimal [24-Bits]
@@ -2072,7 +2070,7 @@ Symbol Table
     PH_IDR  =  005024     |     PH_ODR  =  005023     |     PI      =  000028 
     PI_BASE =  005028     |     PI_CR1  =  00502B     |     PI_CR2  =  00502C 
     PI_DDR  =  00502A     |     PI_IDR  =  005029     |     PI_ODR  =  005028 
-  8 PRBYTE     0080ED R   |   8 PRDATA     0080D9 R   |   8 PRHEX      0080F3 R
+  8 PRBYTE     0080EB R   |   8 PRDATA     0080D7 R   |   8 PRHEX      0080F1 R
     RAM_BASE=  000000     |     RAM_END =  0017FF     |     RAM_SIZE=  001800 
   8 RESET      008004 R   |     ROP     =  004800     |     RS      =  00001E 
     RST_SR  =  0050B3     |   8 RUN        0080BA R   |     SEMIC   =  00003B 
@@ -2217,7 +2215,7 @@ Symbol Table
     WDGOPT  =  004805     |     WDGOPT_I=  000002     |     WDGOPT_L=  000003 
     WDGOPT_W=  000000     |     WDGOPT_W=  000001     |     WWDG_CR =  0050D1 
     WWDG_WR =  0050D2     |     XAM     =  000000     |   4 XAMADR     000004 R
-  8 XAMNEXT    0080E3 R   |   8 XAM_BLOC   0080BD R   |     XAM_BLOK=  00002E 
+  8 XAMNEXT    0080E1 R   |   8 XAM_BLOC   0080BD R   |     XAM_BLOK=  00002E 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 41.
 Hexadecimal [24-Bits]
 
@@ -2239,5 +2237,5 @@ Area Table
    5 DATA2      size     80   flags    8
    6 HOME       size      4   flags    0
    7 CODE       size      0   flags    8
-   8 CODE3      size    102   flags    8
+   8 CODE3      size    100   flags    8
 

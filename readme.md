@@ -12,7 +12,7 @@ Ces programmes ont étés testé sur une carte **NUCLEO-8S207K8**.
 
 Pour construire et flasher le binaire de la version picmon faire:
 ```
-make -fpicmon && make flash
+make -fpicmon.mak && make flash
 ```
 
 Pour la version wozmon faire simplement:

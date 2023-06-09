@@ -1835,28 +1835,57 @@ Hexadecimal [24-Bits]
                                     238 ; code to test 'R' command 
                                     239 ; blink LED on NUCLEO board 
                                     240 ;----------------------------
-                           000000   241 .if 0
-                                    242 r_test:
-                                    243     bset PC_DDR,#5
-                                    244     bset PC_CR1,#5
-                                    245 1$: bcpl PC_ODR,#5 
+                           000001   241 .if 1
+      008104                        242 r_test:
+      008104 72 1A 50 0C      [ 1]  243     bset PC_DDR,#5
+      008108 72 1A 50 0D      [ 1]  244     bset PC_CR1,#5
+      00810C 90 1A 50 0A      [ 1]  245 1$: bcpl PC_ODR,#5 
                                     246 ; delay 
-                                    247     ld a,#4
-                                    248     clrw x
-                                    249 2$:
-                                    250     decw x 
-                                    251     jrne 2$
-                                    252     dec a 
-                                    253     jrne 2$ 
+      008110 A6 04            [ 1]  247     ld a,#4
+      008112 5F               [ 1]  248     clrw x
+      008113                        249 2$:
+      008113 5A               [ 2]  250     decw x 
+      008114 26 FD            [ 1]  251     jrne 2$
+      008116 4A               [ 1]  252     dec a 
+      008117 26 FA            [ 1]  253     jrne 2$ 
                                     254 ; if key exit 
-                                    255     btjf UART_SR,#UART_SR_RXNE,1$
-                                    256     ld a,UART_DR 
+      008119 72 0B 52 40 EE   [ 2]  255     btjf UART_SR,#UART_SR_RXNE,1$
+      00811E C6 52 41         [ 1]  256     ld a,UART_DR 
                                     257 ; reset MCU to ensure monitor
                                     258 ; with peripherals in known state
-                                    259     _swreset
-                                    260 .endif 
-                                    261 
+      008121                        259     _swreset
+      008121 35 80 50 D1      [ 1]    1     mov WWDG_CR,#0X80
+                                    260 
+                                    261 ;------------------------------------
+                                    262 ; another program to test 'R' command
+                                    263 ; print ASCII characters to terminal
+                                    264 ; in loop 
+                                    265 ;-------------------------------------
+      008125                        266 ascii:
+      008125 A6 20            [ 1]  267     ld a,#SPACE
+      008127                        268 1$:
+      008127 CD 80 FB         [ 4]  269     call ECHO 
+      00812A 4C               [ 1]  270     inc a 
+      00812B A1 7F            [ 1]  271     cp a,#127 
+      00812D 2B F8            [ 1]  272     jrmi 1$
+      00812F A6 0D            [ 1]  273     ld a,#CR 
+      008131 CD 80 FB         [ 4]  274     call ECHO 
+                                    275 ; if key exit 
+      008134 72 0B 52 40 EC   [ 2]  276     btjf UART_SR,#UART_SR_RXNE,ascii
+      008139 C6 52 41         [ 1]  277     ld a,UART_DR 
+                                    278 ; reset MCU to ensure monitor
+                                    279 ; with peripherals in known state
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 35.
+Hexadecimal [24-Bits]
+
+
+
+      00813C                        280     _swreset
+      00813C 35 80 50 D1      [ 1]    1     mov WWDG_CR,#0X80
+                                    281 
+                                    282 .endif 
+                                    283 
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 36.
 Hexadecimal [24-Bits]
 
 Symbol Table
@@ -1916,7 +1945,7 @@ Symbol Table
     CLK_SWCR=  0050C5     |     CLK_SWCR=  000000     |     CLK_SWCR=  000001 
     CLK_SWCR=  000002     |     CLK_SWCR=  000003     |     CLK_SWIM=  0050CD 
     CLK_SWR =  0050C4     |     CLK_SWR_=  0000B4     |     CLK_SWR_=  0000E1 
-ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 36.
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 37.
 Hexadecimal [24-Bits]
 
 Symbol Table
@@ -1976,7 +2005,7 @@ Symbol Table
     I2C_CCRH=  000007     |     I2C_CCRL=  00521B     |     I2C_CCRL=  00001A 
     I2C_CCRL=  000002     |     I2C_CCRL=  00000D     |     I2C_CCRL=  000050 
     I2C_CCRL=  000090     |     I2C_CCRL=  0000A0     |     I2C_CR1 =  005210 
-ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 37.
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 38.
 Hexadecimal [24-Bits]
 
 Symbol Table
@@ -2036,7 +2065,7 @@ Symbol Table
     NWDGOPT_=  FFFFFFFD     |     NWDGOPT_=  FFFFFFFC     |     NWDGOPT_=  FFFFFFFF 
     NWDGOPT_=  FFFFFFFE     |   8 NXTPRNT    0080C3 R   |     OFS_UART=  000002 
     OFS_UART=  000003     |     OFS_UART=  000004     |     OFS_UART=  000005 
-ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 38.
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 39.
 Hexadecimal [24-Bits]
 
 Symbol Table
@@ -2096,7 +2125,7 @@ Symbol Table
     TIM1_CCM=  000002     |     TIM1_CCM=  000003     |     TIM1_CCM=  000007 
     TIM1_CCM=  000002     |     TIM1_CCM=  000004     |     TIM1_CCM=  000005 
     TIM1_CCM=  000006     |     TIM1_CCM=  000003     |     TIM1_CCM=  005259 
-ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 39.
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 40.
 Hexadecimal [24-Bits]
 
 Symbol Table
@@ -2156,7 +2185,7 @@ Symbol Table
     TIM3_CCE=  000000     |     TIM3_CCE=  000001     |     TIM3_CCE=  000004 
     TIM3_CCE=  000005     |     TIM3_CCE=  000000     |     TIM3_CCE=  000001 
     TIM3_CCM=  005325     |     TIM3_CCM=  005326     |     TIM3_CCM=  000000 
-ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 40.
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 41.
 Hexadecimal [24-Bits]
 
 Symbol Table
@@ -2216,15 +2245,16 @@ Symbol Table
     WDGOPT_W=  000000     |     WDGOPT_W=  000001     |     WWDG_CR =  0050D1 
     WWDG_WR =  0050D2     |     XAM     =  000000     |   4 XAMADR     000004 R
   8 XAMNEXT    0080E1 R   |   8 XAM_BLOC   0080BD R   |     XAM_BLOK=  00002E 
-ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 41.
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 42.
 Hexadecimal [24-Bits]
 
 Symbol Table
 
     XOFF    =  000013     |     XON     =  000011     |   4 YSAV       00000A R
-  2 stack_fu   001800 R   |   2 stack_sp   001700 R
+  8 ascii      008125 R   |   8 r_test     008104 R   |   2 stack_fu   001800 R
+  2 stack_sp   001700 R
 
-ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 42.
+ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 43.
 Hexadecimal [24-Bits]
 
 Area Table
@@ -2237,5 +2267,5 @@ Area Table
    5 DATA2      size     80   flags    8
    6 HOME       size      4   flags    0
    7 CODE       size      0   flags    8
-   8 CODE3      size    100   flags    8
+   8 CODE3      size    13C   flags    8
 

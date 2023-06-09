@@ -238,7 +238,7 @@ ECHO:
 ; code to test 'R' command 
 ; blink LED on NUCLEO board 
 ;----------------------------
-.if 0
+.if 1
 r_test:
     bset PC_DDR,#5
     bset PC_CR1,#5
@@ -257,5 +257,27 @@ r_test:
 ; reset MCU to ensure monitor
 ; with peripherals in known state
     _swreset
+
+;------------------------------------
+; another program to test 'R' command
+; print ASCII characters to terminal
+; in loop 
+;-------------------------------------
+ascii:
+    ld a,#SPACE
+1$:
+    call ECHO 
+    inc a 
+    cp a,#127 
+    jrmi 1$
+    ld a,#CR 
+    call ECHO 
+; if key exit 
+    btjf UART_SR,#UART_SR_RXNE,ascii
+    ld a,UART_DR 
+; reset MCU to ensure monitor
+; with peripherals in known state
+    _swreset
+
 .endif 
 

@@ -21,8 +21,7 @@ make && make flash
 ```
 
 
-Pour communiquer avec la carte NUCLEO il faut configurer l'émulateur de terminal à 9600 BAUD 8N1  retour à la ligne automatique.
-
+Pour communiquer avec la carte NUCLEO il faut configurer l'émulateur de terminal à 9600 BAUD 8N1  &lt;LF&gt; automatique.
 
 
 

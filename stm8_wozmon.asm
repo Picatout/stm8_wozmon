@@ -238,7 +238,7 @@ ECHO:
 ; code to test 'R' command 
 ; blink LED on NUCLEO board 
 ;----------------------------
-.if 1
+.if 0
 r_test:
     bset PC_DDR,#5
     bset PC_CR1,#5

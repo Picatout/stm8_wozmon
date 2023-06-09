@@ -24,4 +24,5 @@ make && make flash
 Pour communiquer avec la carte NUCLEO il faut configurer l'émulateur de terminal à 9600 BAUD 8N1  &lt;LF&gt; automatique.
 
 
+Lien vers une vidéo de [démonstration du stm8_Wozmon](https://www.youtube.com/watch?v=jJeNQWX2brc)
 

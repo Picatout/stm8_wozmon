@@ -1835,53 +1835,51 @@ Hexadecimal [24-Bits]
                                     238 ; code to test 'R' command 
                                     239 ; blink LED on NUCLEO board 
                                     240 ;----------------------------
-                           000001   241 .if 1
-      008104                        242 r_test:
-      008104 72 1A 50 0C      [ 1]  243     bset PC_DDR,#5
-      008108 72 1A 50 0D      [ 1]  244     bset PC_CR1,#5
-      00810C 90 1A 50 0A      [ 1]  245 1$: bcpl PC_ODR,#5 
+                           000000   241 .if 0
+                                    242 r_test:
+                                    243     bset PC_DDR,#5
+                                    244     bset PC_CR1,#5
+                                    245 1$: bcpl PC_ODR,#5 
                                     246 ; delay 
-      008110 A6 04            [ 1]  247     ld a,#4
-      008112 5F               [ 1]  248     clrw x
-      008113                        249 2$:
-      008113 5A               [ 2]  250     decw x 
-      008114 26 FD            [ 1]  251     jrne 2$
-      008116 4A               [ 1]  252     dec a 
-      008117 26 FA            [ 1]  253     jrne 2$ 
+                                    247     ld a,#4
+                                    248     clrw x
+                                    249 2$:
+                                    250     decw x 
+                                    251     jrne 2$
+                                    252     dec a 
+                                    253     jrne 2$ 
                                     254 ; if key exit 
-      008119 72 0B 52 40 EE   [ 2]  255     btjf UART_SR,#UART_SR_RXNE,1$
-      00811E C6 52 41         [ 1]  256     ld a,UART_DR 
+                                    255     btjf UART_SR,#UART_SR_RXNE,1$
+                                    256     ld a,UART_DR 
                                     257 ; reset MCU to ensure monitor
                                     258 ; with peripherals in known state
-      008121                        259     _swreset
-      008121 35 80 50 D1      [ 1]    1     mov WWDG_CR,#0X80
+                                    259     _swreset
                                     260 
                                     261 ;------------------------------------
                                     262 ; another program to test 'R' command
                                     263 ; print ASCII characters to terminal
                                     264 ; in loop 
                                     265 ;-------------------------------------
-      008125                        266 ascii:
-      008125 A6 20            [ 1]  267     ld a,#SPACE
-      008127                        268 1$:
-      008127 CD 80 FB         [ 4]  269     call ECHO 
-      00812A 4C               [ 1]  270     inc a 
-      00812B A1 7F            [ 1]  271     cp a,#127 
-      00812D 2B F8            [ 1]  272     jrmi 1$
-      00812F A6 0D            [ 1]  273     ld a,#CR 
-      008131 CD 80 FB         [ 4]  274     call ECHO 
+                                    266 ascii:
+                                    267     ld a,#SPACE
+                                    268 1$:
+                                    269     call ECHO 
+                                    270     inc a 
+                                    271     cp a,#127 
+                                    272     jrmi 1$
+                                    273     ld a,#CR 
+                                    274     call ECHO 
                                     275 ; if key exit 
-      008134 72 0B 52 40 EC   [ 2]  276     btjf UART_SR,#UART_SR_RXNE,ascii
-      008139 C6 52 41         [ 1]  277     ld a,UART_DR 
+                                    276     btjf UART_SR,#UART_SR_RXNE,ascii
+                                    277     ld a,UART_DR 
                                     278 ; reset MCU to ensure monitor
                                     279 ; with peripherals in known state
+                                    280     _swreset
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 35.
 Hexadecimal [24-Bits]
 
 
 
-      00813C                        280     _swreset
-      00813C 35 80 50 D1      [ 1]    1     mov WWDG_CR,#0X80
                                     281 
                                     282 .endif 
                                     283 
@@ -2251,8 +2249,7 @@ Hexadecimal [24-Bits]
 Symbol Table
 
     XOFF    =  000013     |     XON     =  000011     |   4 YSAV       00000A R
-  8 ascii      008125 R   |   8 r_test     008104 R   |   2 stack_fu   001800 R
-  2 stack_sp   001700 R
+  2 stack_fu   001800 R   |   2 stack_sp   001700 R
 
 ASxxxx Assembler V02.00 + NoICE + SDCC mods  (STMicroelectronics STM8), page 43.
 Hexadecimal [24-Bits]
@@ -2267,5 +2264,5 @@ Area Table
    5 DATA2      size     80   flags    8
    6 HOME       size      4   flags    0
    7 CODE       size      0   flags    8
-   8 CODE3      size    13C   flags    8
+   8 CODE3      size    100   flags    8
 

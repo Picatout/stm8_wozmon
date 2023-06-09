@@ -2,6 +2,7 @@
 #  stm8_picmon makefile
 #-----------------------
 BOARD=stm8s207k8
+PROGRAMMER=stlinkv21
 BOARD_INC=../inc/stm8s207.inc ../inc/nucleo_8s207.inc
 NAME=stm8_picmon
 SDAS=sdasstm8

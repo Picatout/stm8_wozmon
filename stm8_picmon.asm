@@ -26,7 +26,7 @@
     .include "inc/gen_macros.inc" 
 
     STACK_SIZE=256 
-    TIB_SIZE=128 ; input buffer size 
+    IN_SIZE=128 ; input buffer size 
 
 ;;-----------------------------------
     .area SSEG (ABS)
@@ -38,28 +38,28 @@ stack_full: ; after RAM end
 
 ;--------------------------------------
     .area DATA (ABS)
-	.org 0 
+	.org 4
 ; I reserve page 0 for system variables. 
 ; As 6502, address in this range 
 ; can be accessed with short code 
 ; sdasstm8 assembler don't code
 ; them, so I created a set of macros in 
-; inc/gen_macros.inc 
+; "inc/gen_macros.inc" 
 ; to supplement the assembler 
+; all macros name's begin with '_' 
 ;--------------------------------------	
 mode: .blkb 1 ; command mode 
-start: .blkw 1 ; range start address 
-last: .blkw 1   ; range last address 
-acc16: .blkb 1 ; accumulator upper byte
-acc8: .blkb 1  ; accumulator lower byte 
+xamadr: .blkw 1 ; examine address 
+storadr: .blkw 1 ; store address 
+last: .blkw 1   ; last address parsed from input 
 
 ;; set input buffer at page 1 
 ;;---------------------------------------
    .area DATA (ABS)
    .org 0x100 
 ;;---------------------------------------
-IN: .ds TIB_SIZE ; input buffer 
-free: ; 0x180 free RAM start here, size=stack_space-free+1
+IN: .ds IN_SIZE ; input buffer 
+free: ; 0x180 free RAM xamadr here, size=stack_space-free+1
 
 ;;--------------------------------------
     .area HOME 
@@ -70,7 +70,7 @@ free: ; 0x180 free RAM start here, size=stack_space-free+1
 
 ;;----------------------------------------
 ;; no interrupt used so program code 
-;; can start after reset vector 
+;; can xamadr after reset vector 
     .area  CODE (ABS)
     .org 0x8004  
 ;;----------------------------------------
@@ -90,10 +90,12 @@ reset:
 ;       hex_number  -> display byte at that address 
 ;       hex_number.hex_number -> display bytes in that range 
 ;       hex_number: hex_byte [hex_byte]*  -> modify content of RAM or peripheral registers 
-;       R  -> run binary code a last entered address  
+;       R  -> run binary code at xamadr address  
 ;----------------------------------------------------
-READ=0
-READ_BLOCK=255
+; operatiing modes 
+    NOP=0
+    READ=1 ; single address or block
+    STORE=2 
 
     ; get next character from input buffer 
     .macro _next_char 
@@ -106,49 +108,55 @@ cli:
     call putchar 
     ld a,#'# 
     call putchar ; prompt character 
-    _clrz mode 
     call getline
 ; analyze input line      
     ldw y,#IN  
-parse_input:     
+    _clrz mode 
+next_char:     
     _next_char
     tnz a     
     jrne parse01
 ; at end of line 
-    jra exam_block 
+    tnz mode 
+    jreq cli 
+    call exam_block 
+    jra cli 
 parse01:
     cp a,#'R 
-    jrne 4$ 
+    jrne 4$
+    _ldxz xamadr   
     jp (x) ; run machine code
-    jra cli
 4$: cp a,#':
     jrne 5$ 
-    jra modify 
+    call modify 
+    jra cli     
 5$:
     cp a,#'. 
-    jrne 6$ 
-    cpl mode
-    jra parse_input 
-6$: 
-    cp a,#SPACE 
-    jreq parse_input ; skip blank 
-    call parse_hex
-    tnz a ; unknown token ignore rest of line  
-    jreq exam_block 
-    _strxz last 
+    jrne 8$ 
     tnz mode 
-    jrne parse_input
-    _strxz start 
-    jra parse_input 
+    jreq cli ; here mode should be set to 1 
+    jra next_char 
+8$: 
+    cp a,#SPACE 
+    jrmi next_char ; skip separator and invalids characters  
+    call parse_hex ; maybe an hexadecimal number 
+    tnz a ; unknown token ignore rest of line
+    jreq cli 
+    tnz mode 
+    jreq 9$
+    call exam_block
+    jra next_char
+9$:
+    _strxz xamadr 
+    _strxz storadr
+    _incz mode
+    jra next_char 
 
 ;-------------------------------------
 ; modify RAM or peripheral register 
 ; read byte list from input buffer
 ;--------------------------------------
 modify:
-    _ldxz last 
-    _strxz start 
-    callr exam 
 1$: 
 ; skip spaces 
     _next_char 
@@ -158,61 +166,41 @@ modify:
     tnz a 
     jreq 9$ 
     ld a,xl 
-    _ldxz start 
+    _ldxz storadr 
     ld (x),a 
     incw x 
-    _strxz start
+    _strxz storadr
     jra 1$ 
-9$: jp cli 
-
-;------------------------------------------
-;  display byte value at 'start' address 
-;------------------------------------------
-exam:
-    call print_adr 
-    call print_byte 
+9$: _clrz mode 
     ret 
 
 ;-------------------------------------------
-; display memory in range 'start'...'last' 
+; display memory in range 'xamadr'...'last' 
 ;-------------------------------------------    
-    COUNT=1 
-    ROW_SIZE=3
-    VSIZE=3
+    ROW_SIZE=1
+    VSIZE=1
 exam_block:
-    _vars VSIZE 
-    _ldxz last 
-    subw x,start
-;    jrmi bad_range  
-    incw x 
-    ldw (COUNT,sp),x ; bytes to display count 
+    _vars VSIZE
+    _ldxz xamadr
 new_row: 
     ld a,#8
     ld (ROW_SIZE,sp),a ; bytes per row 
-    call exam ; display address and first byte of row 
-row:
-    ldw x,(COUNT,sp)
-    decw x 
-    jreq 9$ 
-    ldw (COUNT,sp),x 
-    dec (ROW_SIZE,sp)
-    jrne 1$ 
     ld a,#CR 
-    call putchar
-    _ldxz start 
+    call putchar 
+    call print_adr ; display address and first byte of row 
+    call print_mem ; display byte at address  
+row:
     incw x 
-    _strxz start 
-    jra new_row 
-1$:
-    _ldxz start
-    incw x 
-    _strxz start
-    call print_byte 
+    cpw x,last 
+    jrugt 9$ 
+    dec (ROW_SIZE,sp)
+    jreq new_row  
+    call print_mem  
     jra row 
 9$:
-bad_range:
+    _clrz mode 
     _drop VSIZE 
-    jp cli  
+    ret  
 
 ;----------------------------
 ; parse hexadecimal number 
@@ -225,68 +213,74 @@ bad_range:
 ;    Y     point after number 
 ;-----------------------------      
 parse_hex:
-    push #0 
+    push #0 ; digits count 
     clrw x
-    _strxz acc16 
 1$:    
     xor a,#0x30
     cp a,#10 
     jrmi 2$   ; 0..9 
-    add a,#0x8f  
-    jrnc 9$ 
-    add a,#10 ; 'A..'F 
-2$: 
-    sllw x  ; x*16
-    sllw x 
-    sllw x 
-    sllw x 
-    _straz acc8 
-    addw x,acc16 ; x+=digit 
-    inc (1,sp) ; increment digit count 
+    cp a,#0x71
+    jrmi 9$
+    sub a,#0x67  
+2$: push #4
+    swap a 
+3$:
+    sll a 
+    rlcw x 
+    dec (1,sp)
+    jrne 3$
+    pop a
+    inc (1,sp) ; digits count  
     _next_char 
     tnz a 
     jrne 1$
 9$: ; end of hex number
-    pop a
     decw y  ; put back last character  
+    pop a 
+    tnz a 
+    jreq 10$
+    _strxz last 
+10$:
     ret 
 
 ;-----------------------------------
-;  print address in start variable 
+;  print address in xamadr variable
+;  followed by ': '  
 ;  input: 
-;    none 
+;    X     address to print 
 ;  output:
-;   none 
+;   X      not modified 
 ;-------------------------------------
-print_adr:
-    _ldxz start 
-    callr print_hex 
+print_adr: 
+    callr print_word 
     ld a,#': 
     callr putchar 
-    jra space 
+    jra space
 
 ;-------------------------------------
-; print byte at 'start' address 
-; input:
-;   none 
-; output:
-;   none 
-;--------------------------------------
-print_byte:
-    _ldxz start
-    ld a,(x)
-    clrw x 
-    ld xl,a 
-    callr print_hex 
-space:
-    ld a,#SPACE 
-    callr putchar 
-    ret 
-
+;  print byte at memory location 
+;  pointed by X followed by ' ' 
+;  input:
+;     X     memory address 
+;  output:
+;    X      not modified 
+;-------------------------------------
+print_mem:
+    ld a,(x) 
+    call print_byte 
+    
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;     TERMIO 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;--------------------------------
+; print blank space 
+;-------------------------------
+space:
+    ld a,#SPACE 
+    callr putchar 
+    ret 
 
 ;-------------------------------
 ;  print hexadecimal number 
@@ -295,22 +289,35 @@ space:
 ; output:
 ;    none 
 ;--------------------------------
-print_hex: 
+print_word: 
     ld a,xh
-    tnz a 
-    jreq 1$ 
-    swap a 
-    call print_digit 
-    ld a,xh 
-    call print_digit 
-1$: 
+    call print_byte 
     ld a,xl 
-    swap a 
-    call print_digit
-    ld a,xl 
-    call print_digit
+    call print_byte 
     ret 
 
+;---------------------
+; print byte value 
+; in hexadecimal 
+; input:
+;    A   value to print 
+; output:
+;    none 
+;-----------------------
+print_byte:
+    push a 
+    swap a 
+    call print_digit 
+    pop a 
+
+;-------------------------
+; print lower nibble 
+; as digit 
+; input:
+;    A     hex digit to print
+; output:
+;   none:
+;---------------------------
 print_digit: 
     and a,#15 
     add a,#'0 
@@ -375,7 +382,14 @@ getline:
     jrne 2$
     callr delback 
     jra 1$ 
-2$: cp a,#SPACE 
+2$: 
+    cp a,#ESC 
+    jrne 3$
+    ldw y,#IN
+    clr(y)
+    ret 
+3$:    
+    cp a,#SPACE 
     jrmi 1$  ; ignore others control char 
     callr putchar
     ld (y),a 

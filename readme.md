@@ -5,7 +5,7 @@ je me suis demandé combien d'octets le même programme occuperait sur un STM8. 
 
 Dans un premier temps j'ai écris une version de ce moniteur dans mon style habituel de programmation pour voir quelle taille le binaire aurait. J'ai appellé ce programme [stm8_picmon.asm](stm8_picmon.asm) et le binaire a une taille de 357 octets.
 
-Dans un deuxième essaie j'ai collé le plus possible au modèle du programme de Steve Wozniak et j'ai obtenue un binaire de 260 octets. 12 de plus que l'original. J'ai appellé ce programme [stm8_wozmon.asm](stm8_wozmon.asm).
+Dans un deuxième essaie j'ai collé le plus possible au modèle du programme de Steve Wozniak et j'ai obtenue un binaire de 260 octets. 6 de plus que l'original. J'ai appellé ce programme [stm8_wozmon.asm](stm8_wozmon.asm).
 
 Ces programmes ont étés testé sur une carte **NUCLEO-8S207K8**. 
 

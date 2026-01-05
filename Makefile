@@ -1,38 +1,34 @@
 #############################
-# Make file for NUCLEO-8S207K8 board
+# Make file for NUCLEO-8S207K8 MCU
 #############################
-BOARD=stm8s207k8
-PROGRAMMER=stlinkv21
-FLASH_SIZE=65536
-BOARD_INC=../inc/stm8s207.inc ../inc/nucleo_8s207.inc
-NAME=stm8_wozmon
+NAME=stm8_picmon
 SDAS=sdasstm8
 SDCC=sdcc
 OBJCPY=objcpy 
 CFLAGS=-mstm8 -lstm8 -L$(LIB_PATH) -I../inc
-INC=../inc/
-INCLUDES=$(BOARD_INC) $(INC)ascii.inc $(INC)gen_macros.inc 
+INC=inc
+INCLUDES=$(MCU_INC) $(INC)ascii.inc $(INC)gen_macros.inc 
 BUILD=build/
-SRC=stm8_wozmon.asm
-OBJECT=$(BUILD)$(BOARD)/$(NAME).rel
-OBJECTS=$(BUILD)$(BOARD)/$(SRC:.asm=.rel)
-LIST=$(BUILD)$(BOARD)/$(NAME).lst
+SRC=stm8_picmon.asm
+OBJECT=$(BUILD)$(MCU)/$(NAME).rel
+OBJECTS=$(BUILD)$(MCU)/$(SRC:.asm=.rel)
+LIST=$(BUILD)$(MCU)/$(NAME).lst
 FLASH=stm8flash
 
 .PHONY: all
 
-all: clean asm #flash 
+all: clean asm
 
 asm:
 	#
 	# "*************************************"
-	# "compiling $(NAME)  for $(BOARD)      "
+	# "compiling $(NAME)  for $(MCU)      "
 	# "*************************************"
-	$(SDAS) -g -l -o $(BUILD)$(BOARD)/$(NAME).rel $(SRC) 
-	$(SDCC) $(CFLAGS) -Wl-u -o $(BUILD)$(BOARD)/$(NAME).ihx $(OBJECT) 
-	objcopy -Iihex -Obinary  $(BUILD)$(BOARD)/$(NAME).ihx $(BUILD)$(BOARD)/$(NAME).bin 
+	$(SDAS) -g -l -o $(BUILD)$(MCU)/$(NAME).rel $(SRC) 
+	$(SDCC) $(CFLAGS) -Wl-u -o $(BUILD)$(MCU)/$(NAME).ihx $(OBJECT) 
+	objcopy -Iihex -Obinary  $(BUILD)$(MCU)/$(NAME).ihx $(BUILD)$(MCU)/$(NAME).bin 
 	# 
-	@ls -l  $(BUILD)$(BOARD)/$(NAME).bin 
+	@ls -l  $(BUILD)$(MCU)/$(NAME).bin 
 	# 
 
 
@@ -42,11 +38,11 @@ clean:
 	# "***************"
 	# "cleaning files"
 	# "***************"
-	rm -f $(BUILD)$(BOARD)/*
+	rm -f $(BUILD)$(MCU)/*
 flash: $(LIB)
 	#
 	# "******************"
-	# "flashing $(BOARD) "
+	# "flashing $(MCU) "
 	# "******************"
-	$(FLASH) -c $(PROGRAMMER) -p $(BOARD) -s flash -w $(BUILD)$(BOARD)/$(NAME).ihx 
+	$(FLASH) -c $(PROGRAMMER) -p $(MCU) -s flash -w $(BUILD)$(MCU)/$(NAME).ihx 
 

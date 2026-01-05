@@ -48,3 +48,9 @@ flash: $(LIB)
 	# "flashing $(BOARD) "
 	# "******************"
 	$(FLASH) -c $(PROGRAMMER) -p $(BOARD) -s flash -w $(BUILD)$(BOARD)/$(NAME).ihx 
+
+read:
+	$(FLASH) -c $(PROGRAMMER) -p $(BOARD) -s flash -r flash.bin -b32768
+erase:
+	$(FLASH) -c $(PROGRAMMER) -p $(BOARD) -s flash -w zero.bin
+	

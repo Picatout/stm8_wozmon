@@ -18,15 +18,15 @@
 ;;    variables in RAM.  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-    .module STM8_WOZMON 
+    .module STM8_PICMON 
 
-    .include "inc/stm8s207.inc" 
-    .include "inc/nucleo_8s207.inc"
+    .include "config.inc" 
     .include "inc/ascii.inc"
     .include "inc/gen_macros.inc" 
 
     STACK_SIZE=256 
     IN_SIZE=128 ; input buffer size 
+    RX_QUEUE_SIZE=16
 
 ;;-----------------------------------
     .area SSEG (ABS)
@@ -36,11 +36,49 @@
 stack_space: .ds STACK_SIZE ; stack size 256 bytes maximum  
 stack_full: ; after RAM end    
 
+;;--------------------------------------
+    .area HOME 
+;; interrupt vector table at 0x8000
+;;--------------------------------------
+
+    int reset  			    ; RESET vector 
+	int NonHandledInterrupt ; trap instruction 
+	int NonHandledInterrupt ;int0 TLI   external top level interrupt
+	int NonHandledInterrupt ;int1 AWU   auto wake up from halt
+	int NonHandledInterrupt ;int2 CLK   clock controller
+	int NonHandledInterrupt ;int3 EXTI0 gpio A external interrupts
+	int NonHandledInterrupt ;int4 EXTI1 gpio B external interrupts
+	int NonHandledInterrupt ;int5 EXTI2 gpio C external interrupts
+	int NonHandledInterrupt ;int6 EXTI3 gpio D external interrupts
+	int NonHandledInterrupt ;
+	int NonHandledInterrupt ;int8 beCAN RX interrupt
+	int NonHandledInterrupt ;int9 beCAN TX/ER/SC interrupt
+	int NonHandledInterrupt ;int10 SPI End of transfer
+	int NonHandledInterrupt ;int11 TIM1 update/overflow/underflow/trigger/break
+	int NonHandledInterrupt ; int12 TIM1 capture/compare
+	int NonHandledInterrupt ;int13 TIM2 update /overflow
+	int NonHandledInterrupt ;int14 TIM2 capture/compare
+	int NonHandledInterrupt ;int15 TIM3 Update/overflow
+	int NonHandledInterrupt ;int16 TIM3 Capture/compare
+	int NonHandledInterrupt ;int17 UART1 TX completed
+	int NonHandledInterrupt ;int18 UART1 RX full 
+	int NonHandledInterrupt ;int19 I2C 
+	int NonHandledInterrupt ;int20 UART3 TX completed
+	int NonHandledInterrupt ;int21 UART3 RX full
+	int NonHandledInterrupt ;int22 ADC2 end of conversion
+	int NonHandledInterrupt	;int23 TIM4 update/overflow ; used as msec ticks counter
+	int NonHandledInterrupt ;int24 flash writing EOP/WR_PG_DIS
+	int NonHandledInterrupt ;int25  not used
+	int NonHandledInterrupt ;int26  not used
+	int NonHandledInterrupt ;int27  not used
+	int NonHandledInterrupt ;int28  not used
+	int NonHandledInterrupt ;int29  not used
+
 ;--------------------------------------
     .area DATA (ABS)
 	.org 4
 ; I reserve page 0 for system variables. 
-; As 6502, address in this range 
+; As stm8, address in this range 
 ; can be accessed with short code 
 ; sdasstm8 assembler don't code
 ; them, so I created a set of macros in 
@@ -52,6 +90,9 @@ mode: .blkb 1 ; command mode
 xamadr: .blkw 1 ; examine address 
 storadr: .blkw 1 ; store address 
 last: .blkw 1   ; last address parsed from input 
+rx1_queue: .ds RX_QUEUE_SIZE ; UART1 receive circular queue 
+rx1_head:  .blkb 1 ; rx1_queue head pointer
+rx1_tail:   .blkb 1 ; rx1_queue tail pointer  
 
 ;; set input buffer at page 1 
 ;;---------------------------------------
@@ -62,28 +103,33 @@ IN: .ds IN_SIZE ; input buffer
 free: ; 0x180 free RAM xamadr here, size=stack_space-free+1
 
 ;;--------------------------------------
-    .area HOME 
-;; interrupt vector table at 0x8000
+    .area CODE
 ;;--------------------------------------
 
-    int reset			; RESET vector 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; non handled interrupt 
+; reset MCU
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+NonHandledInterrupt:
+	_swreset ; see "inc/gen_macros.inc"
 
-;;----------------------------------------
-;; no interrupt used so program code 
-;; can xamadr after reset vector 
-    .area  CODE (ABS)
-    .org 0x8004  
-;;----------------------------------------
+
+;---------------------------
 ; hardware initialisation 
+;---------------------------
 reset: 
-; keep Fmaster at reset default, 2Mhz  
 ; stack pointer is a RAM_SIZE-1 at reset 
 ; no need to initialize it.
-; init UART at 9600 BAUD, 2Mhz/9600=0x00d0 
-;    clr UART_BRR2 ; not needed already 0 at reset 
-    mov UART_BRR1,#0xd 
-  	mov UART_CR2,#((1<<UART_CR2_TEN)|(1<<UART_CR2_REN)|(1<<UART_CR2_RIEN));
-	bset UART,#UART_CR1_PIEN
+    clr CLK_CKDIVR ; 16Mhz HSI 
+.IF STM8L151
+    bset CLK_PCKENR1,#CLK_PCKENR1_USART1 
+.ENDIF 
+; init UART at 115200 BAUD, 16Mhz/115200=0x8b   
+    mov UART_BRR2,#0xb
+    mov UART_BRR1,#0x8
+  	mov UART_CR2,#((1<<UART_CR2_TEN)|(1<<UART_CR2_REN));|(1<<UART_CR2_RIEN));
+;	bset UART_CR1,#UART_CR1_PIEN
+
 ;--------------------------------------------------
 ; command line interface
 ; input formats:

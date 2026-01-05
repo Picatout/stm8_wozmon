@@ -67,12 +67,12 @@ IN: .ds IN_SIZE ; input buffer
 ;;----------------------------------------
 ; hardware initialisation 
 RESET: 
-; keep Fmaster at reset default, 2Mhz  
 ; stack pointer is a RAM_SIZE-1 at reset 
 ; no need to initialize it.
-; init UART at 9600 BAUD, 2Mhz/9600=0x00d0 
-;    clr UART_BRR2 ; not needed already 0 at reset 
-    mov UART_BRR1,#0xd 
+    clr CLK_CKDIVR ; 16Mhz HSI 
+; init UART at 115200 BAUD, 16Mhz/115200=0x8b   
+    mov UART_BRR2,#0xb
+    mov UART_BRR1,#0x8
   	mov UART_CR2,#((1<<UART_CR2_TEN)|(1<<UART_CR2_REN)|(1<<UART_CR2_RIEN));
 	bset UART,#UART_CR1_PIEN
 ;--------------------------------------------------

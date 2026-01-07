@@ -203,8 +203,9 @@ pul_false: .asciz "overwriting monitor is forbidden.\r"
 ; display memory in range 'xamadr'...'last' 
 ;-------------------------------------------    
     ROW_SIZE=1
-    START_ADR=2
-    VSIZE=3
+    CHAR_CNT=2
+    START_ADR=3
+    VSIZE=4
 exam_block:
     _vars VSIZE
     _ldxz xamadr
@@ -219,22 +220,25 @@ new_row:
 row:
     incw x 
     cpw x,last 
-    jrugt 8$ 
+    jrugt 9$ 
     dec (ROW_SIZE,sp)
     jreq 8$  
     call print_mem  
     jra row
 8$: ; print ASCII characters
+    ld a,#16 
+    sub a,(ROW_SIZE,sp)
+    ld (CHAR_CNT,sp),a 
+; alignement spaces to be printed     
     ld a,(ROW_SIZE,sp)
     sll a 
     add a,(ROW_SIZE,sp)
     add a,#3 
     call spaces
     ldw x,(START_ADR,SP) ; row start address 
-    ld a,#16
-    sub a,(ROW_SIZE,sp) 
-    ld (ROW_SIZE,sp),a 
-81$: 
+81$:
+    tnz (CHAR_CNT,sp) 
+    jreq new_row 
     ld a,(x)
     cp a,#SPACE
     jrmi 82$
@@ -245,10 +249,7 @@ row:
 83$: 
     call putchar 
     incw x
-    cpw x,last 
-    jrugt 9$ 
-    dec (ROW_SIZE,sp)
-    jreq new_row
+    dec (CHAR_CNT,sp)
     jra 81$ 
 9$:
     _clrz mode 

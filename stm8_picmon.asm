@@ -34,45 +34,7 @@
 ;;-----------------------------------
     .org RAM_SIZE-STACK_SIZE  
 stack_space: .ds STACK_SIZE ; stack size 256 bytes maximum  
-stack_full: ; after RAM end    
-
-;;--------------------------------------
-    .area HOME 
-;; interrupt vector table at 0x8000
-;;--------------------------------------
-
-    int reset  			    ; RESET vector 
-	int NonHandledInterrupt ; trap instruction 
-	int NonHandledInterrupt ;int0 TLI   external top level interrupt
-	int NonHandledInterrupt ;int1 AWU   auto wake up from halt
-	int NonHandledInterrupt ;int2 CLK   clock controller
-	int NonHandledInterrupt ;int3 EXTI0 gpio A external interrupts
-	int NonHandledInterrupt ;int4 EXTI1 gpio B external interrupts
-	int NonHandledInterrupt ;int5 EXTI2 gpio C external interrupts
-	int NonHandledInterrupt ;int6 EXTI3 gpio D external interrupts
-	int NonHandledInterrupt ;
-	int NonHandledInterrupt ;int8 beCAN RX interrupt
-	int NonHandledInterrupt ;int9 beCAN TX/ER/SC interrupt
-	int NonHandledInterrupt ;int10 SPI End of transfer
-	int NonHandledInterrupt ;int11 TIM1 update/overflow/underflow/trigger/break
-	int NonHandledInterrupt ; int12 TIM1 capture/compare
-	int NonHandledInterrupt ;int13 TIM2 update /overflow
-	int NonHandledInterrupt ;int14 TIM2 capture/compare
-	int NonHandledInterrupt ;int15 TIM3 Update/overflow
-	int NonHandledInterrupt ;int16 TIM3 Capture/compare
-	int NonHandledInterrupt ;int17 UART1 TX completed
-	int NonHandledInterrupt ;int18 UART1 RX full 
-	int NonHandledInterrupt ;int19 I2C 
-	int NonHandledInterrupt ;int20 UART3 TX completed
-	int NonHandledInterrupt ;int21 UART3 RX full
-	int NonHandledInterrupt ;int22 ADC2 end of conversion
-	int NonHandledInterrupt	;int23 TIM4 update/overflow ; used as msec ticks counter
-	int NonHandledInterrupt ;int24 flash writing EOP/WR_PG_DIS
-	int NonHandledInterrupt ;int25  not used
-	int NonHandledInterrupt ;int26  not used
-	int NonHandledInterrupt ;int27  not used
-	int NonHandledInterrupt ;int28  not used
-	int NonHandledInterrupt ;int29  not used
+stack_empty: ; after RAM end    
 
 ;--------------------------------------
     .area DATA (ABS)
@@ -121,6 +83,12 @@ reset:
 ; stack pointer is a RAM_SIZE-1 at reset 
 ; no need to initialize it.
     clr CLK_CKDIVR ; 16Mhz HSI 
+; unlock FLASH IAP 
+    mov FLASH_PUKR,#FLASH_KEY1
+    mov FLASH_PUKR,#FLASH_KEY2 
+;unlock EEPROM IAP 
+    mov FLASH_DUKR,#EEPROM_KEY1 
+    mov FLASH_DUKR,#EEPROM_KEY2
 .IF STM8L151
     bset CLK_PCKENR1,#CLK_PCKENR1_USART1 
 .ENDIF 
@@ -213,23 +181,36 @@ modify:
     jreq 9$ 
     ld a,xl 
     _ldxz storadr 
+    cpw x,#0x8080
+    jrmi 2$ 
+    cpw x,#free_flash
+    jrmi 10$
+2$:
     ld (x),a 
     incw x 
     _strxz storadr
     jra 1$ 
 9$: _clrz mode 
     ret 
+10$: 
+    ldw x,#pul_false
+    call puts 
+    jra 9$
+pul_false: .asciz "overwriting monitor is forbidden.\r"
+ 
 
 ;-------------------------------------------
 ; display memory in range 'xamadr'...'last' 
 ;-------------------------------------------    
     ROW_SIZE=1
-    VSIZE=1
+    START_ADR=2
+    VSIZE=3
 exam_block:
     _vars VSIZE
     _ldxz xamadr
 new_row: 
-    ld a,#8
+    ldw (START_ADR,SP),x 
+    ld a,#16
     ld (ROW_SIZE,sp),a ; bytes per row 
     ld a,#CR 
     call putchar 
@@ -238,11 +219,37 @@ new_row:
 row:
     incw x 
     cpw x,last 
+    jrugt 8$ 
+    dec (ROW_SIZE,sp)
+    jreq 8$  
+    call print_mem  
+    jra row
+8$: ; print ASCII characters
+    ld a,(ROW_SIZE,sp)
+    sll a 
+    add a,(ROW_SIZE,sp)
+    add a,#3 
+    call spaces
+    ldw x,(START_ADR,SP) ; row start address 
+    ld a,#16
+    sub a,(ROW_SIZE,sp) 
+    ld (ROW_SIZE,sp),a 
+81$: 
+    ld a,(x)
+    cp a,#SPACE
+    jrmi 82$
+    cp a,#127
+    jrmi 83$
+82$:     
+    ld a,#SPACE 
+83$: 
+    call putchar 
+    incw x
+    cpw x,last 
     jrugt 9$ 
     dec (ROW_SIZE,sp)
-    jreq new_row  
-    call print_mem  
-    jra row 
+    jreq new_row
+    jra 81$ 
 9$:
     _clrz mode 
     _drop VSIZE 
@@ -328,6 +335,21 @@ space:
     callr putchar 
     ret 
 
+;-------------------------
+; print many spaces 
+; input:
+;    A    count 
+;-------------------------
+spaces:
+    push a
+    ld a,#SPACE  
+1$:
+    callr putchar 
+    dec (1,sp)
+    jrne 1$ 
+    _drop 1 
+    ret 
+
 ;-------------------------------
 ;  print hexadecimal number 
 ; input:
@@ -405,6 +427,20 @@ getchar:
 putchar:
     btjf UART_SR,#UART_SR_TXE,. 
     ld UART_DR,a 
+    ret 
+
+;------------------------------
+; print sero terminated string 
+; input:
+;    X   string address 
+;-----------------------------
+puts:
+    ld a,(x)
+    jreq 9$
+    call putchar 
+    incw x 
+    jra puts 
+9$:
     ret 
 
 ;------------------------------------
@@ -489,3 +525,7 @@ r_test:
     _swreset 
 .endif 
 
+mon_end:
+.word 0,0
+.asciz "MONITOR END"
+free_flash:

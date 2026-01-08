@@ -46,3 +46,5 @@ flash: $(LIB)
 	# "******************"
 	$(FLASH) -c $(PROGRAMMER) -p $(MCU) -s flash -w $(BUILD)$(MCU)/$(NAME).ihx 
 
+reset: 
+	$(FLASH) -c $(PROGRAMMER) -p $(MCU) -R

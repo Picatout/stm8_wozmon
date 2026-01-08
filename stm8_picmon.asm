@@ -135,55 +135,53 @@ cli:
 next_char:     
     _next_char
     tnz a 
-    jrne parse01
+    jrne parse
 ; at end of line 
     _ldaz mode 
-    jreq exam_next 
-    cp a,#READ 
     jrne 1$
+    call exam_next 
+    jra cli 
+1$:
     call exam_block 
     jra cli
-1$: 
-    cp a,#MOVE 
-    jreq copy_range
-    jra cli      
-parse01:
-    cp a,#'M 
-    jrne 1$
-    ld a,#READ 
-    cp a,mode 
-    jrne cli  
-    mov mode,#MOVE 
-    jra next_char
-1$:
+parse:
     cp a,#'R 
-    jrne 4$
+    jrne 1$ 
     _ldxz xamadr   
     jp (x) ; run machine code
-4$: cp a,#':
+1$:
+    cp a,#'M 
+    jrne 2$
+    call copy_range 
+    jra cli
+2$: cp a,#':
     jrne 5$ 
     call modify 
     jra cli     
 5$:
     cp a,#'. 
-    jrne 8$ 
-    tnz mode 
-    jreq cli ; here mode should be set to 1 
+    jrne 6$ 
+    _ldaz mode 
+    cp a,#READ 
+    jrne cli ; here mode should be set to 1 
     jra next_char 
-8$: 
-    cp a,#SPACE 
+6$: 
+    cp a,#SPACE+1 
     jrmi next_char ; skip separator and invalids characters  
     call parse_hex ; maybe an hexadecimal number 
     tnz a ; unknown token ignore rest of line
     jreq cli 
     ld a,mode 
     jreq 9$
-;    call exam_block
+    cp a,#READ
+    jrne next_char 
+    _strxz storadr
+    _incz mode ; mode=STORE 
     jra next_char
 9$:
     _strxz xamadr 
     _strxz storadr
-    _incz mode
+    _incz mode    ; mode=READ 
     jra next_char 
 
 ;----------------------------
@@ -197,6 +195,16 @@ exam_next:
     _strxz xamadr
     jp cli 
 
+;----------------------
+; skip spaces char 
+; between tokens 
+;----------------------
+skip_spaces:
+    _next_char 
+    cp a,#SPACE 
+    jreq skip_spaces
+    ret 
+
 ;----------------------------
 ; copy memory range
 ; cmd format: adr1.adr2Madr3 
@@ -204,6 +212,10 @@ exam_next:
 ; adr2 is destination 
 ;-----------------------------
 copy_range:
+    call skip_spaces    
+    call parse_hex 
+    tnz a 
+    jreq 9$ 
     ldw x,xamadr 
     ldw y,last 
 1$:
@@ -215,18 +227,15 @@ copy_range:
     incw y 
     jra 1$
 9$:
-    jp cli 
+    ret 
 
 ;-------------------------------------
 ; modify RAM or peripheral register 
 ; read byte list from input buffer
 ;--------------------------------------
 modify:
-1$: 
-; skip spaces 
-    _next_char 
-    cp a,#SPACE 
-    jreq 1$ 
+1$:
+    call skip_spaces 
     call parse_hex
     tnz a 
     jreq 9$ 
@@ -322,12 +331,15 @@ parse_hex:
     push #0 ; digits count 
     clrw x
 1$:    
-    xor a,#0x30
+    sub a,#'0
+    jrmi 9$ ; not a digit 
     cp a,#10 
     jrmi 2$   ; 0..9 
-    cp a,#0x71
+    cp a,#'A-'0 
     jrmi 9$
-    sub a,#0x67  
+    sub a,#0x7
+    cp a,#16 
+    jrpl 9$ 
 2$: push #4
     swap a 
 3$:

@@ -109,7 +109,8 @@ reset:
 ; operatiing modes 
     NOP=0
     READ=1 ; single address or block
-    STORE=2 
+    STORE=2 ; adr: byte ... 
+    COPY=3 ; adr1.adr2Madr3
 
     ; get next character from input buffer 
     .macro _next_char 
@@ -131,11 +132,25 @@ next_char:
     tnz a     
     jrne parse01
 ; at end of line 
-    tnz mode 
-    jreq cli 
+    _ldaz mode 
+    jreq cli
+    cp a,#READ 
+    jrne 1$
     call exam_block 
-    jra cli 
+    jra cli
+1$: 
+    cp a,#COPY 
+    jreq copy_range
+    jra cli      
 parse01:
+    cp a,#'M 
+    jrne 1$
+    ld a,#READ 
+    cp a,mode 
+    jrne cli  
+    mov mode,#COPY 
+    jra next_char
+1$:
     cp a,#'R 
     jrne 4$
     _ldxz xamadr   
@@ -156,15 +171,29 @@ parse01:
     call parse_hex ; maybe an hexadecimal number 
     tnz a ; unknown token ignore rest of line
     jreq cli 
-    tnz mode 
+    ld a,mode 
     jreq 9$
-    call exam_block
+;    call exam_block
     jra next_char
 9$:
     _strxz xamadr 
     _strxz storadr
     _incz mode
     jra next_char 
+
+copy_range:
+    ldw x,xamadr 
+    ldw y,last 
+1$:
+    cpw x,storadr 
+    jrugt 9$
+    ld a,(x)
+    ld (y),a 
+    incw x 
+    incw y 
+    jra 1$
+9$:
+    jp cli 
 
 ;-------------------------------------
 ; modify RAM or peripheral register 
@@ -216,24 +245,24 @@ new_row:
     ld a,#CR 
     call putchar 
     call print_adr ; display address and first byte of row 
-    call print_mem ; display byte at address  
 row:
-    incw x 
     cpw x,last 
-    jrugt 9$ 
+    jrugt 8$
+    call print_mem ; display byte at address  
+    incw x 
     dec (ROW_SIZE,sp)
     jreq 8$  
-    call print_mem  
     jra row
 8$: ; print ASCII characters
     ld a,#16 
     sub a,(ROW_SIZE,sp)
+    jreq 9$
     ld (CHAR_CNT,sp),a 
 ; alignement spaces to be printed     
     ld a,(ROW_SIZE,sp)
     sll a 
     add a,(ROW_SIZE,sp)
-    add a,#3 
+    add a,#2
     call spaces
     ldw x,(START_ADR,SP) ; row start address 
 81$:

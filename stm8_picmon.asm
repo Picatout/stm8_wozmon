@@ -97,6 +97,11 @@ reset:
     mov UART_BRR1,#0x8
   	mov UART_CR2,#((1<<UART_CR2_TEN)|(1<<UART_CR2_REN));|(1<<UART_CR2_RIEN));
 ;	bset UART_CR1,#UART_CR1_PIEN
+; clear RAM 
+    ldw x,#RAM_END
+1$: clr (x)
+    decw x 
+    jrne 1$
 
 ;--------------------------------------------------
 ; command line interface
@@ -107,10 +112,10 @@ reset:
 ;       R  -> run binary code at xamadr address  
 ;----------------------------------------------------
 ; operatiing modes 
-    NOP=0
-    READ=1 ; single address or block
-    STORE=2 ; adr: byte ... 
-    COPY=3 ; adr1.adr2Madr3
+    NEXT=0 ; examine next byte: [adr]<ENTER>
+    READ=1 ; examine range: adr1.adr2<ENTER>
+    STORE=2 ; store to memory:  adr: byte ... <ENTER>
+    MOVE=3 ; move range: adr1.adr2Madr3<ENTER>
 
     ; get next character from input buffer 
     .macro _next_char 
@@ -129,17 +134,17 @@ cli:
     _clrz mode 
 next_char:     
     _next_char
-    tnz a     
+    tnz a 
     jrne parse01
 ; at end of line 
     _ldaz mode 
-    jreq cli
+    jreq exam_next 
     cp a,#READ 
     jrne 1$
     call exam_block 
     jra cli
 1$: 
-    cp a,#COPY 
+    cp a,#MOVE 
     jreq copy_range
     jra cli      
 parse01:
@@ -148,7 +153,7 @@ parse01:
     ld a,#READ 
     cp a,mode 
     jrne cli  
-    mov mode,#COPY 
+    mov mode,#MOVE 
     jra next_char
 1$:
     cp a,#'R 
@@ -181,6 +186,23 @@ parse01:
     _incz mode
     jra next_char 
 
+;----------------------------
+; examine next byte 
+;---------------------------
+exam_next:
+    _ldxz xamadr
+    call print_adr
+    call print_mem
+    incw x 
+    _strxz xamadr
+    jp cli 
+
+;----------------------------
+; copy memory range
+; cmd format: adr1.adr2Madr3 
+; adr1.adr2 is range 
+; adr2 is destination 
+;-----------------------------
 copy_range:
     ldw x,xamadr 
     ldw y,last 
@@ -281,6 +303,7 @@ row:
     dec (CHAR_CNT,sp)
     jra 81$ 
 9$:
+    _strxz xamadr
     _clrz mode 
     _drop VSIZE 
     ret  

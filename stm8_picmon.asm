@@ -255,27 +255,52 @@ zero_range:
     ret 
 
 ;-------------------------------------
-; modify RAM or peripheral register 
+; modify memory or peripheral register 
 ; read byte list from input buffer
+; format adr: byte|quote ...   
 ;--------------------------------------
 modify:
+    ldw x,storadr 
+    cpw x,#0x8080 
+    jrmi 0$
+    cpw x,#free_flash
+    jrpl 0$ 
+    call forbidden 
+    jra 9$
+0$: call skip_spaces 
+    cp a,#'" 
+    jrne 1$ 
+    call store_string 
+    jra 0$ 
 1$:
-    call skip_spaces 
     call parse_hex
     tnz a 
-    jreq 9$ 
-    ld a,xl 
+    jreq 9$
+    ld a,xl
     _ldxz storadr 
-    cpw x,#0x8080
-    jrmi 2$ 
-    cpw x,#free_flash
-    jrmi forbidden
-2$:
     ld (x),a 
-    incw x 
+    addw x,#1 
+    jrc 9$
     _strxz storadr
-    jra 1$ 
-9$: 
+    jra 0$ 
+9$:  
+    ret 
+
+;---------------------
+; store quoted string
+;--------------------
+store_string:
+0$:
+    _next_char 
+    cp a,#'" 
+    jreq 9$ 
+    _ldxz storadr 
+    ld (x),a 
+    addw x,#1 
+    jrc 9$
+    _strxz storadr 
+    jra 0$ 
+9$:
     ret 
 
 ;-------------------------

@@ -159,13 +159,18 @@ parse:
     call modify 
     jra cli     
 5$:
+    cp a,#'Z 
+    jrne 6$
+    call zero_range 
+    jra cli 
+6$:    
     cp a,#'. 
-    jrne 6$ 
+    jrne 7$ 
     _ldaz mode 
     cp a,#READ 
     jrne cli ; here mode should be set to 1 
     jra next_char 
-6$: 
+7$: 
     cp a,#SPACE+1 
     jrmi next_char ; skip separator and invalids characters  
     call parse_hex ; maybe an hexadecimal number 
@@ -217,15 +222,35 @@ copy_range:
     tnz a 
     jreq 9$ 
     ldw x,xamadr 
-    ldw y,last 
+    ldw y,last
+    cpw y,#free_flash
+    jrmi forbidden 
 1$:
     cpw x,storadr 
     jrugt 9$
     ld a,(x)
     ld (y),a 
-    incw x 
+    incw x
+    jreq 9$  
     incw y 
     jra 1$
+9$:
+    ret 
+
+;---------------------
+; set a range to zero 
+; adr1.adr2Z
+;---------------------
+zero_range:
+    ldw x,xamadr
+    cpw x,#free_flash 
+    jrmi forbidden  
+1$: 
+    cpw x,last 
+    jrugt 9$
+    clr (x)
+    incw x 
+    jrne 1$
 9$:
     ret 
 
@@ -244,19 +269,25 @@ modify:
     cpw x,#0x8080
     jrmi 2$ 
     cpw x,#free_flash
-    jrmi 10$
+    jrmi forbidden
 2$:
     ld (x),a 
     incw x 
     _strxz storadr
     jra 1$ 
-9$: _clrz mode 
+9$: 
     ret 
-10$: 
-    ldw x,#pul_false
+
+;-------------------------
+; try to overwrite monitor
+;--------------------------
+forbidden: 
+    ldw x,#error_forbidden
     call puts 
-    jra 9$
-pul_false: .asciz "overwriting monitor is forbidden.\r"
+    ldw x,#free_flash
+    call print_word
+    ret 
+error_forbidden: .asciz "overwriting monitor is forbidden.\rFree space start at "
  
 
 ;-------------------------------------------
@@ -280,7 +311,8 @@ row:
     cpw x,last 
     jrugt 8$
     call print_mem ; display byte at address  
-    incw x 
+    addw x,#1
+    jrc 8$ 
     dec (ROW_SIZE,sp)
     jreq 8$  
     jra row
@@ -308,7 +340,8 @@ row:
     ld a,#SPACE 
 83$: 
     call putchar 
-    incw x
+    addw x,#1
+    jrc 9$
     dec (CHAR_CNT,sp)
     jra 81$ 
 9$:

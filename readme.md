@@ -34,5 +34,5 @@ Commandes ajoutées
 
 * __adr1.adr2Madr3__  copy le contenu de la mémoire entre __adr1__ et __adr2__ vers l'adresse __adr3__.
 
-* __adr1.adr2Z__ met à zéro la mémoire entre __adr1 et __adr2__.
+* __adr1.adr2Z__ met à zéro la mémoire entre __adr1__ et __adr2__.
 

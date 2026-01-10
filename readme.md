@@ -26,3 +26,13 @@ Pour communiquer avec la carte NUCLEO il faut configurer l'émulateur de termina
 
 Lien vers une vidéo de [démonstration du stm8_Wozmon](https://www.youtube.com/watch?v=jJeNQWX2brc)
 
+## 2026-01-09 
+
+Reprise du projet pour ajouter modifier le [Picatout Monitor](!stm8_picmon.asm).  
+
+Commandes ajoutées 
+
+* __adr1.adr2Madr3__  copy le contenu de la mémoire entre __adr1__ et __adr2__ vers l'adresse __adr3__.
+
+* __adr1.adr2Z__ met à zéro la mémoire entre __adr1 et __adr2__.
+

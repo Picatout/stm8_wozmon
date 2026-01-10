@@ -1,0 +1,55 @@
+STM8S207K8=0
+STM8L151=1
+
+.IF STM8L151 
+;--------------------
+; USART_SR bitS 
+;----------------------
+    UART_SR_PE=USART_SR_PE
+    UART_SR_FE=USART_SR_FE
+    UART_SR_NF=USART_SR_NF
+    UART_SR_OR=USART_SR_OR
+    UART_SR_IDLE=USART_SR_IDLE
+    UART_SR_RXNE=USART_SR_RXNE
+    UART_SR_TC=USART_SR_TC
+    UART_SR_TXE=USART_SR_TXE
+
+    UART_SR=USART1_SR
+    UART_DR=USART1_DR 
+    UART_BRR1=USART1_BRR1 
+    UART_BRR2=USART1_BRR2 
+    UART_CR1=USART1_CR1
+    UART_CR2=USART1_CR2 
+    ;---------------------
+    ; USART_CR1 bits 
+    ;---------------------
+    UART_CR1_PIEN=USART_CR1_PIEN
+    UART_CR1_PS=USART_CR1_PS
+    UART_CR1_PCEN=USART_CR1_PCEN
+    UART_CR1_WAKE=USART_CR1_WAKE
+    UART_CR1_M=USART_CR1_M
+    UART_CR1_USARTD=USART_CR1_USARTD
+    UART_CR1_T8=USART_CR1_T8
+    UART_CR1_R8=USART_CR1_R8
+
+;-----------------------
+; USART_CR2 bits 
+;-----------------------
+    UART_CR2_SBK=USART_CR2_SBK
+    UART_CR2_RWU=USART_CR2_RWU
+    UART_CR2_REN=USART_CR2_REN
+    UART_CR2_TEN=USART_CR2_TEN
+    UART_CR2_ILIEN=USART_CR2_ILIEN
+    UART_CR2_RIEN=USART_CR2_RIEN
+    UART_CR2_TCIEN=USART_CR2_TCIEN
+    UART_CR2_TIEN=USART_CR2_TIEN
+
+    .include "inc/stm8l151.inc"
+    .include "stm8l151-vec.asm" 
+.ELSE 
+    .include "inc/stm8s207.inc" 
+    .include "inc/nucleo_8s207.inc"
+    .include "stm8s207-vec.asm"
+.ENDIF 
+
+

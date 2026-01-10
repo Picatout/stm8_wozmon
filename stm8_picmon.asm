@@ -97,12 +97,13 @@ reset:
     mov UART_BRR1,#0x8
   	mov UART_CR2,#((1<<UART_CR2_TEN)|(1<<UART_CR2_REN));|(1<<UART_CR2_RIEN));
 ;	bset UART_CR1,#UART_CR1_PIEN
+.if 0
 ; clear RAM 
     ldw x,#RAM_END
 1$: clr (x)
     decw x 
     jrne 1$
-
+.endif 
 ;--------------------------------------------------
 ; command line interface
 ; input formats:
@@ -297,9 +298,15 @@ store_string:
     _ldxz storadr 
     ld (x),a 
     addw x,#1 
-    jrc 9$
+    jrc 8$
     _strxz storadr 
-    jra 0$ 
+    jra 0$
+8$:  
+    _next_char 
+    tnz a 
+    jreq 9$
+    cp a,#'"
+    jrne 8$     
 9$:
     ret 
 

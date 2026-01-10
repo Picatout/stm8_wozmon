@@ -104,6 +104,8 @@ reset:
     decw x 
     jrne 1$
 .endif 
+    call hello 
+
 ;--------------------------------------------------
 ; command line interface
 ; input formats:
@@ -316,11 +318,23 @@ store_string:
 forbidden: 
     ldw x,#error_forbidden
     call puts 
+    ret 
+error_forbidden: .asciz "overwriting monitor is forbidden.\r"
+
+;-------------------------
+; print firwmare info 
+;-------------------------
+hello:
+    ld a,#27 
+    call putchar 
+    ld a,#'c 
+    call putchar 
+    ldw x,#Copyright 
+    call puts 
     ldw x,#free_flash
     call print_word
     ret 
-error_forbidden: .asciz "overwriting monitor is forbidden.\rFree space start at "
- 
+Copyright: .asciz "STM8 Picatout monitor\rFree space start at "
 
 ;-------------------------------------------
 ; display memory in range 'xamadr'...'last' 

@@ -28,7 +28,7 @@ Lien vers une vidéo de [démonstration du stm8_Wozmon](https://www.youtube.com/
 
 ## 2026-01-09 
 
-Reprise du projet pour ajouter modifier le [Picatout Monitor](!stm8_picmon.asm).  
+Reprise du projet pour étendre le [Picatout Monitor](!stm8_picmon.asm) et ajouter configuration pour le STM8L151.  
 
 Commandes ajoutées 
 

@@ -36,3 +36,7 @@ Commandes ajoutées
 
 * __adr1.adr2Z__ met à zéro la mémoire entre __adr1__ et __adr2__.
 
+## 2026-01-10
+
+* Intégration de [terminal.asm](terminal.asm) au Picatout monitor.  
+* __CTRL+C__ réinitialise le MCU. 

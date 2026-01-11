@@ -84,11 +84,11 @@ reset:
 ; no need to initialize it.
     clr CLK_CKDIVR ; 16Mhz HSI 
 ; unlock FLASH IAP 
-    mov FLASH_PUKR,#FLASH_KEY1
-    mov FLASH_PUKR,#FLASH_KEY2 
+    mov FLASH_PUKR,#FLASH_PUKR_KEY1
+    mov FLASH_PUKR,#FLASH_PUKR_KEY2 
 ;unlock EEPROM IAP 
-    mov FLASH_DUKR,#EEPROM_KEY1 
-    mov FLASH_DUKR,#EEPROM_KEY2
+    mov FLASH_DUKR,#FLASH_DUKR_KEY1 
+    mov FLASH_DUKR,#FLASH_DUKR_KEY2
     call uart_init 
     rim
     call hello 

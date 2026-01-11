@@ -348,8 +348,8 @@ row:
     jrugt 8$
     call print_mem ; display byte at address  
     addw x,#1
-    jrc 8$ 
     dec (ROW_SIZE,sp)
+    jrc 8$ 
     jreq 8$  
     jra row
 8$: ; print ASCII characters

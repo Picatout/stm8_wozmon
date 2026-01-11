@@ -80,7 +80,8 @@ NonHandledInterrupt:
 ; hardware initialisation 
 ;---------------------------
 reset: 
-; stack pointer is a RAM_SIZE-1 at reset 
+    ldw x,#RAM_END 
+    ldw sp,x 
 ; no need to initialize it.
     clr CLK_CKDIVR ; 16Mhz HSI 
 ; unlock FLASH IAP 
@@ -214,21 +215,22 @@ copy_range:
     call parse_hex 
     tnz a 
     jreq 9$ 
-    ldw x,xamadr 
-    ldw y,last
-    cpw y,#free_flash
-    jrmi forbidden 
-1$:
-    cpw x,storadr 
+    ldw y,xamadr ; source 
+    ldw x,last  ; destination 
+1$:    
+    cpw y,storadr ; limit 
     jrugt 9$
-    ld a,(x)
-    ld (y),a 
+    ld a,(y)
+    ld (x),a 
+3$:
     incw x
-    jreq 9$  
-    incw y 
+    jreq 9$ ; rollover  
+    incw y  ; rollover 
+    jreq 9$ 
     jra 1$
 9$:
     ret 
+
 
 ;---------------------
 ; set a range to zero 
@@ -236,15 +238,14 @@ copy_range:
 ;---------------------
 zero_range:
     ldw x,xamadr
-    cpw x,#free_flash 
-    jrmi forbidden  
 1$: 
     cpw x,last 
-    jrugt 9$
+    jrugt 9$ 
     clr (x)
+4$:
     incw x 
-    jrne 1$
-9$:
+    jrne 1$ 
+9$: 
     ret 
 
 ;-------------------------------------
@@ -254,28 +255,22 @@ zero_range:
 ;--------------------------------------
 modify:
     ldw x,storadr 
-    cpw x,#0x8080 
-    jrmi 0$
-    cpw x,#free_flash
-    jrpl 0$ 
-    call forbidden 
-    jra 9$
-0$: call skip_spaces 
+1$: call skip_spaces 
     cp a,#'" 
-    jrne 1$ 
+    jrne 2$ 
     call store_string 
-    jra 0$ 
-1$:
+    jra 1$ 
+2$:
     call parse_hex
     tnz a 
     jreq 9$
     ld a,xl
-    _ldxz storadr 
+    _ldxz storadr
     ld (x),a 
-    addw x,#1 
-    jrc 9$
+    incw x  
+    jreq 9$ 
     _strxz storadr
-    jra 0$ 
+    jra 1$ 
 9$:  
     ret 
 
@@ -287,13 +282,13 @@ store_string:
     _next_char 
     cp a,#'" 
     jreq 9$ 
-    _ldxz storadr 
+    _ldxz storadr
+1$: 
     ld (x),a 
-    addw x,#1 
-    jrc 8$
+    incw x 
+    jreq 8$ 
     _strxz storadr 
-    jra 0$
-8$:  
+8$: ; skip to end of string  
     _next_char 
     tnz a 
     jreq 9$
@@ -302,14 +297,39 @@ store_string:
 9$:
     ret 
 
+.if 0 
+;------------------
+; write byte to 
+; flash memory 
+;------------------
+write_flash:
+; check range 
+    cpw x,#0x8080 
+    jrmi 1$ 
+    cpw x,#free_flash 
+    jrpl 1$ 
+    jra forbidden  
+1$:    
+    btjf FLASH_IAPSR,#FLASH_IAPSR_PUL,9$ 
+    ld (x),a
+    btjf FLASH_IAPSR,#FLASH_IAPSR_EOP,.
+9$:
+    ret 
+
 ;-------------------------
-; try to overwrite monitor
+; don't overwrite monitor
 ;--------------------------
 forbidden: 
     ldw x,#error_forbidden
-    call puts 
-    ret 
+    call puts    
+    ldw x,#RAM_END 
+    ldw sp,x 
+    ldw x,#0 
+    _strxz xamadr
+    _strxz storadr 
+    jp cli  
 error_forbidden: .asciz "overwriting monitor is forbidden.\r"
+.endif 
 
 ;-------------------------
 ; print firwmare info 
@@ -459,32 +479,11 @@ print_mem:
     call space 
     ret 
 
-;----------------------------
-; code to test 'R' command 
-; blink LED on NUCLEO board 
-;----------------------------
-.if 0
-r_test:
-    bset PC_DDR,#5
-    bset PC_CR1,#5
-1$: bcpl PC_ODR,#5 
-; delay 
-    ld a,#4
-    clrw x
-2$:
-    decw x 
-    jrne 2$
-    dec a 
-    jrne 2$ 
-; if key exit 
-    btjf UART_SR,#UART_SR_RXNE,1$
-    ld a,UART_DR 
-; reset MCU to ensure peripherals known 
-; state at monitor entry.
-    _swreset 
-.endif 
-
+    .include "terminal.asm" 
+    
 mon_end:
-.word 0,0
+.bndry 16    
 .asciz "MONITOR END"
+.bndry 16
 free_flash:
+.word 0

@@ -9,7 +9,7 @@ CFLAGS=-mstm8 -lstm8 -L$(LIB_PATH) -I../inc
 INC=inc
 INCLUDES=$(MCU_INC) $(INC)ascii.inc $(INC)gen_macros.inc 
 BUILD=build/
-SRC=stm8_picmon.asm terminal.asm
+SRC=stm8_picmon.asm 
 OBJECT=$(BUILD)$(MCU)/$(NAME).rel
 OBJECTS=$(BUILD)$(MCU)/$(SRC:.asm=.rel)
 LIST=$(BUILD)$(MCU)/$(NAME).lst

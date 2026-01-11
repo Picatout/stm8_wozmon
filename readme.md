@@ -47,4 +47,6 @@ Il s'agit d'une correction de bogues. Aucune fonctionalité supplémentaire.
 
 **AVERTISSEMENT** J'ai enlevé la protection d'écrasement du code du moniteur avec les fonctions qui modifient le contenu de la mémoire.
 
+* Le dépot du projet a été renommé **STM8_PICMON**  en remplacement de **STM8_WOZMON**. 
+
 

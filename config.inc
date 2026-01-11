@@ -2,6 +2,12 @@ STM8S207K8=0
 STM8L151=1
 
 .IF STM8L151 
+    UART_SR=USART1_SR
+    UART_DR=USART1_DR 
+    UART_BRR1=USART1_BRR1 
+    UART_BRR2=USART1_BRR2 
+    UART_CR1=USART1_CR1
+    UART_CR2=USART1_CR2 
 ;--------------------
 ; USART_SR bitS 
 ;----------------------
@@ -14,15 +20,9 @@ STM8L151=1
     UART_SR_TC=USART_SR_TC
     UART_SR_TXE=USART_SR_TXE
 
-    UART_SR=USART1_SR
-    UART_DR=USART1_DR 
-    UART_BRR1=USART1_BRR1 
-    UART_BRR2=USART1_BRR2 
-    UART_CR1=USART1_CR1
-    UART_CR2=USART1_CR2 
-    ;---------------------
-    ; USART_CR1 bits 
-    ;---------------------
+;---------------------
+; USART_CR1 bits 
+;---------------------
     UART_CR1_PIEN=USART_CR1_PIEN
     UART_CR1_PS=USART_CR1_PS
     UART_CR1_PCEN=USART_CR1_PCEN

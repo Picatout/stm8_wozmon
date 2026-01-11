@@ -34,7 +34,7 @@
 	int NonHandledInterrupt ;int25 TIM4 update/overflow/trigger
 	int NonHandledInterrupt ;int26 SPI1 TX buffer empty/RX buffer not empty/error/wakeup
 	int NonHandledInterrupt ;int27 USART1 TX register empty/transmit completed 
-	int NonHandledInterrupt ;int28 USART1 RX ready/error 
+	int UartRxHandler       ;int28 USART1 RX ready/error 
 	int NonHandledInterrupt ;int29 I2C1 
 
 

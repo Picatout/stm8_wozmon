@@ -52,17 +52,17 @@ mode: .blkb 1 ; command mode
 xamadr: .blkw 1 ; examine address 
 storadr: .blkw 1 ; store address 
 last: .blkw 1   ; last address parsed from input 
-rx1_queue: .ds RX_QUEUE_SIZE ; UART1 receive circular queue 
-rx1_head:  .blkb 1 ; rx1_queue head pointer
-rx1_tail:   .blkb 1 ; rx1_queue tail pointer  
+rx_queue: .ds RX_QUEUE_SIZE ; UART1 receive circular queue 
+rx_head:  .blkb 1 ; rx_queue head pointer
+rx_tail:   .blkb 1 ; rx_queue tail pointer  
 
 ;; set input buffer at page 1 
 ;;---------------------------------------
    .area DATA (ABS)
-   .org 0x100 
+   .org 0x80 
 ;;---------------------------------------
 IN: .ds IN_SIZE ; input buffer 
-free: ; 0x180 free RAM xamadr here, size=stack_space-free+1
+free: ; 0x100 free RAM xamadr here, size=stack_space-free+1
 
 ;;--------------------------------------
     .area CODE
@@ -89,22 +89,12 @@ reset:
 ;unlock EEPROM IAP 
     mov FLASH_DUKR,#EEPROM_KEY1 
     mov FLASH_DUKR,#EEPROM_KEY2
-.IF STM8L151
-    bset CLK_PCKENR1,#CLK_PCKENR1_USART1 
-.ENDIF 
-; init UART at 115200 BAUD, 16Mhz/115200=0x8b   
-    mov UART_BRR2,#0xb
-    mov UART_BRR1,#0x8
-  	mov UART_CR2,#((1<<UART_CR2_TEN)|(1<<UART_CR2_REN));|(1<<UART_CR2_RIEN));
-;	bset UART_CR1,#UART_CR1_PIEN
-.if 0
-; clear RAM 
-    ldw x,#RAM_END
-1$: clr (x)
-    decw x 
-    jrne 1$
-.endif 
+    call uart_init 
+    rim
     call hello 
+    _clrz xamadr 
+    _clrz storadr 
+    _clrz last 
 
 ;--------------------------------------------------
 ; command line interface
@@ -201,7 +191,7 @@ exam_next:
     call print_mem
     incw x 
     _strxz xamadr
-    jp cli 
+    ret 
 
 ;----------------------
 ; skip spaces char 
@@ -451,8 +441,9 @@ parse_hex:
 print_adr: 
     callr print_word 
     ld a,#': 
-    callr putchar 
-    jra space
+    call putchar 
+    call space
+    ret 
 
 ;-------------------------------------
 ;  print byte at memory location 
@@ -464,184 +455,8 @@ print_adr:
 ;-------------------------------------
 print_mem:
     ld a,(x) 
-    call print_byte 
-    
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;     TERMIO 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;--------------------------------
-; print blank space 
-;-------------------------------
-space:
-    ld a,#SPACE 
-    callr putchar 
-    ret 
-
-;-------------------------
-; print many spaces 
-; input:
-;    A    count 
-;-------------------------
-spaces:
-    push a
-    ld a,#SPACE  
-1$:
-    callr putchar 
-    dec (1,sp)
-    jrne 1$ 
-    _drop 1 
-    ret 
-
-;-------------------------------
-;  print hexadecimal number 
-; input:
-;    X  number to print 
-; output:
-;    none 
-;--------------------------------
-print_word: 
-    ld a,xh
-    call print_byte 
-    ld a,xl 
-    call print_byte 
-    ret 
-
-;---------------------
-; print byte value 
-; in hexadecimal 
-; input:
-;    A   value to print 
-; output:
-;    none 
-;-----------------------
-print_byte:
-    push a 
-    swap a 
-    call print_digit 
-    pop a 
-
-;-------------------------
-; print lower nibble 
-; as digit 
-; input:
-;    A     hex digit to print
-; output:
-;   none:
-;---------------------------
-print_digit: 
-    and a,#15 
-    add a,#'0 
-    cp a,#'9+1 
-    jrmi 1$
-    add a,#7 
-1$:
-    call putchar 
-9$:
-    ret 
-
-;---------------------------------------
-; get next character from terminal 
-; like Apple I foldback ASCII code 
-; from 0x60..0x7f to 0x40..0x5f
-; input:
-;   none 
-; output: 
-;   A     character 
-;----------------------------------------
-getchar:
-    btjf UART_SR,#UART_SR_RXNE,. 
-    ld a,UART_DR 
-    cp a,#'a 
-    jrmi 9$
-    cp a,#'z+1 
-    jrpl 9$
-    and a,#0xDF ; upper case  
-9$:
-    ret 
-
-;---------------------------------------
-; send character to terminal 
-; input:
-;    A    character to send 
-; output:
-;    none 
-;----------------------------------------    
-putchar:
-    btjf UART_SR,#UART_SR_TXE,. 
-    ld UART_DR,a 
-    ret 
-
-;------------------------------
-; print sero terminated string 
-; input:
-;    X   string address 
-;-----------------------------
-puts:
-    ld a,(x)
-    jreq 9$
-    call putchar 
-    incw x 
-    jra puts 
-9$:
-    ret 
-
-;------------------------------------
-;  read text line from terminal 
-;  put it in IN buffer 
-;  CR to terminale input.
-;  BS to deleter character left 
-;  input:
-;   none 
-;  output:
-;    IN      input line ASCIZ no CR  
-;-------------------------------------
-getline:
-    ldw y,#IN 
-1$:
-    clr (y) 
-    callr getchar 
-    cp a,#CR 
-    jreq 9$ 
-    cp a,#BS 
-    jrne 2$
-    callr delback 
-    jra 1$ 
-2$: 
-    cp a,#ESC 
-    jrne 3$
-    ldw y,#IN
-    clr(y)
-    ret 
-3$:    
-    cp a,#SPACE 
-    jrmi 1$  ; ignore others control char 
-    callr putchar
-    ld (y),a 
-    incw y 
-    jra 1$
-9$: callr putchar 
-    ret 
-
-;-----------------------------------
-; delete character left of cursor 
-; decrement Y 
-; input:
-;   none 
-; output:
-;   none 
-;-----------------------------------
-delback:
-    cpw y,#IN 
-    jreq 9$     
-    callr putchar ; backspace 
-    ld a,#SPACE    
-    callr putchar ; overwrite with space 
-    ld a,#BS 
-    callr putchar ;  backspace
-    decw y
-9$:
+    call print_byte
+    call space 
     ret 
 
 ;----------------------------

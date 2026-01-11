@@ -1,4 +1,4 @@
-# STM8 Wozmon
+# Picatout STM8 monitor 
 
 Comme j'étais en train d'étudier le code source du moniteur installé sur le [Apple I](applei.1976.operatiion-manual.pdf), communément appellé Wozmon parce que ce petit programme a été écris par Steve Wozniak, 
 je me suis demandé combien d'octets le même programme occuperait sur un STM8.  L'architecture matérielle du processeur STM8 est un extension de celle du 6502 utilisé sur le Apple I. Le Wozmon a une taille de 254 octets. La ROM du Apple I ne faisait que 256 octets.
@@ -40,3 +40,11 @@ Commandes ajoutées
 
 * Intégration de [terminal.asm](terminal.asm) au Picatout monitor.  
 * __CTRL+C__ réinitialise le MCU. 
+
+## 2026-01-11  version 1.5 
+
+Il s'agit d'une correction de bogues. Aucune fonctionalité supplémentaire.
+
+**AVERTISSEMENT** J'ai enlevé la protection d'écrasement du code du moniteur avec les fonctions qui modifient le contenu de la mémoire.
+
+
